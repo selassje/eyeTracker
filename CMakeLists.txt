@@ -4,12 +4,6 @@ include(CMakePrintHelpers)
 
 project(EyeTracker CXX)
 
-set(SYS_INCLUDE_DIRS "C:/Program\ Files (x86)/Microsoft\ Visual\ Studio/2019/Community/VC/Tools/MSVC/14.23.28105/atlmfc/include"
-                     "C:/Program\ Files (x86)/Microsoft\ Visual\ Studio/2019/Community/VC/Tools/MSVC/14.23.28105/include"
-                     "C:/Program\ Files (x86)/Windows\ Kits/10/Include/10.0.18362.0/ucrt/"
-                     "C:/Program\ Files (x86)/Windows\ Kits/10/Include/10.0.18362.0/um/"
-                     "C:/Program\ Files (x86)/Windows\ Kits/10/Include/10.0.18362.0/shared/")
-
 set(OPENCV_INCLUDE_DIRS "F:/Instalki/OpenCV/opencv-3.4.1/build"
                         "F:/Instalki/OpenCV/opencv-3.4.1/modules/core/include"
                         "F:/Instalki/OpenCV/opencv-3.4.1/modules/videoio/include"
@@ -27,7 +21,7 @@ set(LINK_DIRS "F:/Repos/videoInput/videoInputSrcAndDemos/VS-videoInputcompileAsL
 set(CMAKE_MFC_FLAG 2)
 add_definitions(-D_AFXDLL -DUNICODE -D_UNICODE)
 
-include_directories(BEFORE SYSTEM ${SYS_INCLUDE_DIRS} ${OPENCV_INCLUDE_DIRS} ${VIDEOINPUT_INCLUDE_DIR})
+include_directories(BEFORE SYSTEM ${OPENCV_INCLUDE_DIRS} ${VIDEOINPUT_INCLUDE_DIR})
 link_directories(${LINK_DIRS})
 
 
@@ -58,5 +52,4 @@ target_link_libraries(EyeTracker "opencv_core341.lib"
                                  "opencv_imgproc341.lib" 
                                  "opencv_videoio341.lib"
                                  "opencv_objdetect341.lib"
-                                 "videoinputD.lib"
-                                 "mfc140.lib")
+                                 "videoinputD.lib")
