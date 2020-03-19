@@ -8,7 +8,6 @@
 #include "EyeTrackerDlg.h"
 #include "ObjectDetection.h"
 
-#include "opencv2/highgui/highgui.hpp"
 
 #define DISPLAY_TIMER 1
 #define MOUSE_SENSIVITY 20
@@ -16,6 +15,8 @@
 #define DBLCLK_FRAME_LIMIT 15
 
 IMPLEMENT_DYNAMIC(CCameraDlg, CDialog)
+
+using namespace cv;
 
 CCameraDlg::CCameraDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(CCameraDlg::IDD, pParent)
@@ -317,10 +318,7 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
 					CString strLog;
 					strLog.Format(L"Detected Left Eye (x=%d y=%d width=%d height=%d)",cEyeLeft.x,cEyeLeft.y,cEyeLeft.width,cEyeLeft.height);
 					Log(strLog);			
-					
-#ifdef DEBUG
-					cvSaveImage("left_eye.jpg",pLeftEyeDisplay);
-#endif
+
 					
 					cvReleaseImage(&pLeftEyeDisplay);
 

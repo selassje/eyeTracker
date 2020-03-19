@@ -35,11 +35,7 @@
 #endif // _AFX_NO_AFXCMN_SUPPORT
 #include <afxcontrolbars.h>
 
-#include "opencv2/core/core.hpp"
-//#include "opencv2/opencv.hpp"
-//#include "cv.h"
-//#include "highgui.h"
-
+#include "opencv2/core.hpp"
 
 #define MAX_FILES 2000
 

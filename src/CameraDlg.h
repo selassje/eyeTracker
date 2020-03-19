@@ -2,7 +2,10 @@
 #include "afxcmn.h"
 
 
-#include "opencv2/videoio/videoio.hpp"
+#include <opencv2/highgui/highgui_c.h>
+#include <opencv2/videoio/videoio_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/imgproc.hpp>
 
 #include "resource.h"
 #include "afxwin.h"

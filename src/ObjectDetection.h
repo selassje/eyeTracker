@@ -1,9 +1,9 @@
 #pragma once
 
-//#include "cv.h"
-//#include "highgui.h"
 #include <queue>
 #include "opencv2/objdetect.hpp"
+#include <opencv2/videoio/videoio_c.h>
+#include <opencv2/highgui/highgui_c.h>
 
 class CObjectDetection
 {

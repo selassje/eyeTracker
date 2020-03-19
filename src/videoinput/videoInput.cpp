@@ -5,6 +5,10 @@
 //LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 //OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //THE SOFTWARE.
+
+
+  
+
 #include  <iostream>
 #include <algorithm>
 
@@ -29,6 +33,7 @@
 #ifndef HEADER
 #define HEADER(pVideoInfo) (&(((VIDEOINFOHEADER *) (pVideoInfo))->bmiHeader))
 #endif
+
 
 // Due to a missing qedit.h in recent Platform SDKs, we've replicated the relevant contents here
 // #include <qedit.h>
@@ -87,7 +92,7 @@ static bool VI_COM_MULTI_THREADED = false;
 
 ///////////////////////////  HANDY FUNCTIONS  /////////////////////////////
 
-void MyFreeMediaType(AM_MEDIA_TYPE& mt){
+void MyFreeMediaType(::AM_MEDIA_TYPE& mt){
     if (mt.cbFormat != 0)
     {
         CoTaskMemFree((PVOID)mt.pbFormat);
@@ -102,7 +107,7 @@ void MyFreeMediaType(AM_MEDIA_TYPE& mt){
     }
 }
 
-void MyDeleteMediaType(AM_MEDIA_TYPE *pmt)
+void MyDeleteMediaType(::AM_MEDIA_TYPE *pmt)
 {
     if (pmt != NULL)
     {

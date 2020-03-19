@@ -7,7 +7,10 @@
 #include <map>
 #include <utility>
 
-#include "opencv2/highgui/highgui_c.h"
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/objdetect.hpp>
+
+using namespace cv;
 
 CvHaarClassifierCascade* CObjectDetection::m_pFacesCascade = (CvHaarClassifierCascade*)cvLoad("haarcascade_frontalface_alt.xml") ;
 CvHaarClassifierCascade* CObjectDetection::m_pEyesCascade = (CvHaarClassifierCascade*)cvLoad("haarcascade_eye.xml");
@@ -28,7 +31,7 @@ CvRect* CObjectDetection::DetectFace(IplImage *img)
             1,
             CV_HAAR_DO_CANNY_PRUNING);
 #ifdef DEBUG
-	cvSaveImage("small_face.jpg",pSmallImg);
+	 cv::imwrite("small_face.jpg",cv::cvarrToMat(pSmallImg));
 #endif
 	cvReleaseImage(&pSmallImg);
 	if(pFaces->total == 0)
@@ -91,7 +94,7 @@ void CObjectDetection::DetectEyes(IplImage *img,CvRect* pFace,CvRect* pLeftEye,C
 				auto pSearchDrawnImg = cvCreateImage(cvGetSize(img), img->depth, img->nChannels );
 				cvCopy(img,pSearchDrawnImg);
 				cvRectangle(pSearchDrawnImg,cvPoint(pFace->x,pFace->y + iSearchImageHeightOffset ),cvPoint(pFace->x + pFace->width,pFace->y + iSearchImageHeight+ iSearchImageHeightOffset),CV_RGB(0,0,0),1,0,0);		
-				cvSaveImage("eye_search.jpg",pSearchDrawnImg);
+				//cv::  cvSaveImage("eye_search.jpg",pSearchDrawnImg);
 				cvReleaseImage(&pSearchDrawnImg);
 		#endif DEBUG
 	}

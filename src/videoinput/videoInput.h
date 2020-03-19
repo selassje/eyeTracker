@@ -37,6 +37,8 @@ Thanks to:
 */
 /////////////////////////////////////////////////////////
 
+
+	
 #ifdef _MSC_VER
 #pragma comment(lib,"Strmiids.lib") 
 #endif
@@ -114,8 +116,7 @@ Thanks to:
 
 
 //////////////////////////////////////   VARS AND DEFS   //////////////////////////////////
-
-
+  
 //STUFF YOU DON'T CHANGE
 
 //videoInput defines
@@ -412,5 +413,7 @@ class videoInput{
 		static std::vector<std::wstring> deviceUniqueNames;
 
 };
+
+ // namespace THEO_VIDEOINPUT
 
  #endif

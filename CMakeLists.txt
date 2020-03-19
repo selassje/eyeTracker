@@ -4,26 +4,30 @@ include(CMakePrintHelpers)
 
 project(EyeTracker CXX)
 
-set(OPENCV_INCLUDE_DIRS "F:/Instalki/OpenCV/opencv-3.4.1/build"
-                        "F:/Instalki/OpenCV/opencv-3.4.1/modules/core/include"
-                        "F:/Instalki/OpenCV/opencv-3.4.1/modules/videoio/include"
-                        "F:/Instalki/OpenCV/opencv-3.4.1/modules/objdetect/include"
-                        "F:/Instalki/OpenCV/opencv-3.4.1/modules/highgui/include"
-                        "F:/Instalki/OpenCV/opencv-3.4.1/modules/imgcodecs/include"
-                        "F:/Instalki/OpenCV/opencv-3.4.1/modules/imgproc/include")
-
-
-set(LINK_DIRS "F:/Instalki/OpenCV/opencv-3.4.1/build/lib/Release")
-
+set_source_files_properties(src/EyeTracker.rc PROPERTIES LANGUAGE RC)
 set(CMAKE_MFC_FLAG 2)
 add_definitions(-D_AFXDLL -DUNICODE -D_UNICODE)
+                          
 
-include_directories(BEFORE SYSTEM ${OPENCV_INCLUDE_DIRS} src/videoinput)
-link_directories(${LINK_DIRS})
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
+   message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+   file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/v0.15/conan.cmake"
+                 "${CMAKE_BINARY_DIR}/conan.cmake")
+endif()
 
-cmake_print_variables(INCLUDE_DIRS)
+include(${CMAKE_BINARY_DIR}/conan.cmake)
+conan_cmake_run(CONANFILE conanfile.txt
+                BASIC_SETUP CMAKE_TARGETS
+                BUILD missing)
 
-set_source_files_properties(src/EyeTracker.rc PROPERTIES LANGUAGE RC)
+include(${CMAKE_BINARY_DIR}/conanbuildinfo_release.cmake)
+link_directories(${CONAN_OPENCV_ROOT_RELEASE}/staticlib)
+
+include(${CMAKE_BINARY_DIR}/conanbuildinfo_debug.cmake)
+link_directories(${CONAN_OPENCV_ROOT_DEBUG}/staticlib)
+
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+include_directories(${CONAN_INCLUDE_DIRS_OPENCV})     
 
 add_executable(EyeTracker WIN32
                           src/EyeTracker.cpp
@@ -37,16 +41,8 @@ add_executable(EyeTracker WIN32
                           src/ObjectDetection.cpp
                           src/stdafx.cpp
                           src/graph.cpp
-                          src/videoinput/videoinput.cpp
                           src/EyeTracker.rc
                           src/res/EyeTracker.rc2
-                          src/res/EyeTracker2.ico
+                          src/res/EyeTracker2.ico)
 
-)
-target_link_libraries(EyeTracker "opencv_core341.lib" 
-                                 "opencv_imgcodecs341.lib" 
-                                 "opencv_highgui341.lib" 
-                                 "opencv_imgproc341.lib" 
-                                 "opencv_videoio341.lib"
-                                 "opencv_objdetect341.lib"
-                                 )
+conan_target_link_libraries(EyeTracker)
