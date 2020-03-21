@@ -2,8 +2,7 @@ os: windows
 
 install:
   - choco install -y conan
-  #- set PATH=C:\Program Files\Conan\conan;%PATH%
-  - RefreshEnv.cmd
+  - RefreshEnv2.cmd
   - conan -v
 
 matrix:
