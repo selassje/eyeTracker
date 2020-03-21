@@ -1,4 +1,8 @@
 os: windows
+
+install:
+  - choco install -y conan
+
 matrix:
     include:        
         - language: cpp
