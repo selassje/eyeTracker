@@ -7,9 +7,9 @@ matrix:
     include:        
         - language: cpp
           script:
-            - alias conan='cmd //c "RefreshEnv.cmd & conan.exe"'
-            - conan -v
+           # - alias conan='cmd //c "RefreshEnv.cmd & conan.exe"'
+          #  - conan -v
             - mkdir build
             - cd build
-            - cmake ..
+            - cmd //c "RefreshEnv.cmd & cmake .."
             - cmake --build . --config Release
