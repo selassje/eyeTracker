@@ -8,7 +8,7 @@ matrix:
         - language: cpp
           script:
             - RefreshEnv.cmd
-            - 'C:\Program Files\Conan\conan\conan.exe' -v
+            - C:\Program Files\Conan\conan\conan.exe -v
             - mkdir build
             - cd build
             - cmake ..
