@@ -7,7 +7,7 @@ matrix:
     include:        
         - language: cpp
           script:
-            - cmd //c "RefreshEnv.cmd & conan.exe -v" 
+            - alias conan='cmd //c "RefreshEnv.cmd & conan.exe"'
             - conan -v
             - mkdir build
             - cd build
