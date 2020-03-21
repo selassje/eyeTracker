@@ -2,7 +2,7 @@ os: windows
 
 install:
   - choco install -y conan
-  - refreshenv
+  - `refreshenv`
   - conan -v
 
 matrix:
