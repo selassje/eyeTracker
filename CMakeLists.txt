@@ -4,6 +4,8 @@ include(CMakePrintHelpers)
 
 project(EyeTracker CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+
 set_source_files_properties(src/EyeTracker.rc PROPERTIES LANGUAGE RC)
 set(CMAKE_MFC_FLAG 2)
 add_definitions(-D_AFXDLL -DUNICODE -D_UNICODE)
@@ -20,13 +22,9 @@ conan_cmake_run(CONANFILE conanfile.txt
                 BASIC_SETUP CMAKE_TARGETS
                 BUILD missing)
 
-include(${CMAKE_BINARY_DIR}/conanbuildinfo_release.cmake)
+include(${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
 link_directories(${CONAN_OPENCV_ROOT_RELEASE}/staticlib)
-
-include(${CMAKE_BINARY_DIR}/conanbuildinfo_debug.cmake)
 link_directories(${CONAN_OPENCV_ROOT_DEBUG}/staticlib)
-
-include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 include_directories(${CONAN_INCLUDE_DIRS_OPENCV})     
 
 add_executable(EyeTracker WIN32

@@ -2,7 +2,7 @@
 #include "stdafx.h"
 #include "EyeTracker.h"
 #include "SettingDlg.h"
-//#include "opencv2/videoio/videoio.hpp"
+#include "opencv2/videoio/videoio.hpp"
 
 using namespace cv;
 
@@ -197,14 +197,22 @@ private:
 
 void CSettingDlg::UpdateDeviceList(void)
 {
-    videoInput VI;
-	m_cDeviceCombo.ResetContent();
+    //videoInput VI;
+    cv::VideoCapture v;
+    char buf[256];
     int iCameraNum = 0;
+    while (v.open(iCameraNum)) {
+        ++iCameraNum;
+        v.release();
+    }
+	m_cDeviceCombo.ResetContent();
+ 
 	for(int i =0;i<iCameraNum;++i)
 	{
-		CStringA strDeviceNameA =  VI.getDeviceName(i);
-		CString strDeviceName(strDeviceNameA);
-		m_cDeviceCombo.AddString(strDeviceName);
+        if (auto err = _itoa_s(i, buf, 10); err == 0) {
+            CStringA strDeviceNameA = buf;
+            m_cDeviceCombo.AddString(CString(strDeviceNameA));
+        }
 	}
 }
 

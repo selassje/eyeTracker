@@ -368,7 +368,7 @@ CvPoint CObjectDetection::DetectPupilCDF(IplImage *pEyeImg)
 }
 
 
-template<class T>struct greater_second: std::binary_function<T,T,bool>
+template<class T>struct greater_second
 {   
 	inline bool operator()(const T& lhs, const T& rhs)   
 	{      
