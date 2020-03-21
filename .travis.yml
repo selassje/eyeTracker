@@ -3,6 +3,7 @@ os: windows
 install:
   - choco install -y conan
   - RefreshEnv.cmd
+  - echo %PATH%
   - conan -v
 
 matrix:
