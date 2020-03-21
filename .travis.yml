@@ -1,14 +1,13 @@
 os: windows
 
 install:
-  - choco install -y conan
+  - choco install conan --params="'/AddToPath:1'"
 
 matrix:
     include:        
         - language: cpp
           script:
             - RefreshEnv.cmd
-            - C:\Program Files\Conan\conan\conan.exe -v
             - mkdir build
             - cd build
             - cmake ..
