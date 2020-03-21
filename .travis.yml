@@ -2,6 +2,7 @@ os: windows
 
 install:
   - choco install -y conan
+  - cmd /c RefreshEnv.cmd
 
 matrix:
     include:        
