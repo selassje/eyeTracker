@@ -7,7 +7,7 @@ matrix:
     include:        
         - language: cpp
           script:
-            - cmd //c "RefreshEnv.cmd & conan -v" 
+            - cmd //c "RefreshEnv.cmd & conan.exe -v" 
             - conan -v
             - mkdir build
             - cd build
