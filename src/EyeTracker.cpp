@@ -60,14 +60,9 @@ BOOL CEyeTrackerApp::InitInstance()
 
     CEyeTrackerDlg dlg;
     m_pMainWnd = &dlg;
-#ifdef DEBUG
     typedef HRESULT(STDAPICALLTYPE* FuncDllRegisterServer)();
 
-#ifndef _AFXDLL
-    HMODULE hDll = LoadLibrary(L"NTGraph.ocx");
-#else
     HMODULE hDll = AfxLoadLibrary(L"NTGraph.ocx");
-#endif	
     if (hDll == 0)
     {
         ::MessageBox(m_pMainWnd->m_hWnd,L"Could not find NTGraph.ocx.", L"Error",MB_ICONERROR | MB_OK);
@@ -90,14 +85,7 @@ BOOL CEyeTrackerApp::InitInstance()
                 //exit(-1);
             }
         }
-
-
-
-
-
-
     }
-#endif DEBUG
     INT_PTR nResponse = dlg.DoModal();
     if (nResponse == IDOK)
     {
@@ -112,8 +100,6 @@ BOOL CEyeTrackerApp::InitInstance()
 
     // Since the dialog has been closed, return FALSE so that we exit the
     //  application, rather than start the application's message pump.
-
-#ifdef DEBUG
     if (hDll)
     {
         FuncDllRegisterServer unregisterServer = (FuncDllRegisterServer)GetProcAddress(hDll, "DllUnregisterServer");
@@ -130,8 +116,6 @@ BOOL CEyeTrackerApp::InitInstance()
             }
         }
     }
-
-#endif
     return FALSE;
 }
 
