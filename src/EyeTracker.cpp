@@ -62,30 +62,6 @@ BOOL CEyeTrackerApp::InitInstance()
     m_pMainWnd = &dlg;
     typedef HRESULT(STDAPICALLTYPE* FuncDllRegisterServer)();
 
-    HMODULE hDll = AfxLoadLibrary(L"NTGraph.ocx");
-    if (hDll == 0)
-    {
-        ::MessageBox(m_pMainWnd->m_hWnd,L"Could not find NTGraph.ocx.", L"Error",MB_ICONERROR | MB_OK);
-    }
-    else
-    {
-        FuncDllRegisterServer registerServer = (FuncDllRegisterServer)GetProcAddress(hDll, "DllRegisterServer");
-        if (registerServer == 0)
-        {
-
-            exit(-1);
-        }
-        else
-        {
-            HRESULT hResult;
-            hResult = registerServer();
-            if (FAILED(hResult))
-            {
-                ::MessageBox(m_pMainWnd->m_hWnd, L"Could not register NTGraph.ocx.", L"Error", MB_ICONERROR | MB_OK);
-                //exit(-1);
-            }
-        }
-    }
     INT_PTR nResponse = dlg.DoModal();
     if (nResponse == IDOK)
     {
@@ -96,25 +72,6 @@ BOOL CEyeTrackerApp::InitInstance()
     {
         // TODO: Place code here to handle when the dialog is
         //  dismissed with Cancel
-    }
-
-    // Since the dialog has been closed, return FALSE so that we exit the
-    //  application, rather than start the application's message pump.
-    if (hDll)
-    {
-        FuncDllRegisterServer unregisterServer = (FuncDllRegisterServer)GetProcAddress(hDll, "DllUnregisterServer");
-        if (unregisterServer == 0)
-        {
-            //::MessageBox(m_pMainWnd->m_hWnd,L"Could not find NTGraph.ocx.", L"Error",MB_ICONERROR | MB_OK);
-        }
-        else
-        {
-            HRESULT hResult = unregisterServer();
-            if (FAILED(hResult))
-            {
-                ::MessageBox(m_pMainWnd->m_hWnd, L"Could not unregister NTGraph.ocx.", L"Error", MB_ICONERROR | MB_OK);
-            }
-        }
     }
     return FALSE;
 }
