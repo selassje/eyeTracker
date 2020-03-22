@@ -44,3 +44,4 @@ add_executable(EyeTracker WIN32
                           src/res/EyeTracker2.ico)
 
 conan_target_link_libraries(EyeTracker)
+
