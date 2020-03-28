@@ -29,8 +29,8 @@ private:
 	int m_iRightEyeHeight;
 	int m_iImgWidth;
 	int m_iImgHeight;
-	int m_iCurrentImg;
-	int m_iImgCount;
+	size_t m_iCurrentImg;
+	size_t m_iImgCount;
 	
 	void AnalyzeCurrentImg();
 

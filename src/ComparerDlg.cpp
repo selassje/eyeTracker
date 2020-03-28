@@ -80,7 +80,7 @@ void CComparerDlg::OnBnClickedButton1()
 				cvReleaseImage(&pImg);
 			}
 		}
-		int iImgCount = m_lImages.size();
+		auto iImgCount = m_lImages.size();
 
 		CString strImgCount;
 		if(iImgCount == 0)
@@ -125,9 +125,9 @@ void CComparerDlg::OnBnClickedButton2()
 
 	double dInterval = m_dErrorThreshold/m_iPointsNumber;
 
-	int iImageCount = m_lImages.size();
+	auto iImageCount = m_lImages.size();
 
-	m_cProgCtrl.SetRange(0,iImageCount-1);
+	m_cProgCtrl.SetRange(0,static_cast<short>(iImageCount)-1);
 	CWaitCursor cWait;
 	for(unsigned int i = 0; i < m_lImages.size();++i)
 	{
@@ -494,11 +494,11 @@ void CComparerDlg::SetupGraph(void)
 
 void CComparerDlg::OnBnClickedExport()
 {
-	int iCDFNum = m_CDFPoints.size();
-	int iGPFNum = m_GPFPoints.size();
-	int iEDGENum = m_EdgePoints.size();
+	auto iCDFNum = m_CDFPoints.size();
+	auto iGPFNum = m_GPFPoints.size();
+	auto iEDGENum = m_EdgePoints.size();
 	
-	int iPoints = MAX(iCDFNum,MAX(iGPFNum,iEDGENum));
+	auto iPoints = MAX(iCDFNum,MAX(iGPFNum,iEDGENum));
 	CFileDialog fileDlg(FALSE,NULL,NULL,4|2, L"Text Files(*.txt)|*.txt|All(*.*)|*.*||",this);
 	if(fileDlg.DoModal() == IDOK)
 	{	
