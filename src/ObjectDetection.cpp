@@ -833,7 +833,7 @@ BOOL CObjectDetection::DetectBlink(IplImage* pEyeImg,
 
                 auto var = static_cast<size_t>(iSum / iLastFramesNumber);
 
-                if (var > iVarrianceThreshold) {
+                if (var > static_cast<size_t>(iVarrianceThreshold)) {
                     ++iTresholdedPixels;
 #ifdef DEBUG
                     cvSet2D(pVarrianceThesholded, y, x, cvScalar(255));
