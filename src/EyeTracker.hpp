@@ -1,4 +1,4 @@
-/*
+﻿/*
 MIT License
 
 Copyright (c) 2020 Przemyslaw Koziol
@@ -23,7 +23,30 @@ SOFTWARE.
 
 */
 
-#include "stdafx.h"
-#include "Graph.hpp"
+#ifndef EYETRACKER_HPP
+#define EYETRACKER_HPP
 
-IMPLEMENT_DYNCREATE(CGraph, CWnd)
+#ifndef __AFXWIN_H__
+#error "include 'stdafx.h' before including this file for PCH"
+#endif
+
+#include "resource.h"
+
+class CEyeTrackerApp : public CWinApp {
+public:
+    CEyeTrackerApp();
+public:
+    virtual BOOL InitInstance();
+
+    DECLARE_MESSAGE_MAP()
+};
+
+extern CEyeTrackerApp theApp;
+
+void Log(CString strMessage);
+
+void SetDlgItemDouble(CWnd* pWnd, int iIdc, double dValue);
+
+double GetDlgItemDouble(CWnd* pWnd, int iIdc);
+
+#endif

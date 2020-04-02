@@ -1,7 +1,30 @@
+/*
+MIT License
 
+Copyright (c) 2020 Przemyslaw Koziol
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+*/
 #include "stdafx.h"
-#include "EyeTracker.h"
-#include "SettingDlg.h"
+#include "EyeTracker.hpp"
+#include "SettingDlg.hpp"
 #include "opencv2/videoio/videoio.hpp"
 
 using namespace cv;
@@ -25,9 +48,8 @@ using namespace cv;
 IMPLEMENT_DYNAMIC(CSettingDlg, CDialog)
 
 CSettingDlg::CSettingDlg(CWnd* pParent)
-	: CDialog(CSettingDlg::IDD, pParent)
+    : CDialog(CSettingDlg::IDD, pParent)
 {
-
 }
 
 CSettingDlg::~CSettingDlg()
@@ -36,14 +58,13 @@ CSettingDlg::~CSettingDlg()
 
 void CSettingDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_COMBODEVICE, m_cDeviceCombo);
-	DDX_Control(pDX, IDC_ALGCOMBO, m_cAlgList);
+    CDialog::DoDataExchange(pDX);
+    DDX_Control(pDX, IDC_COMBODEVICE, m_cDeviceCombo);
+    DDX_Control(pDX, IDC_ALGCOMBO, m_cAlgList);
 }
 
-
 BEGIN_MESSAGE_MAP(CSettingDlg, CDialog)
-	ON_CBN_DROPDOWN(IDC_COMBODEVICE, &CSettingDlg::OnCbnDropdownCombodevice)
+ON_CBN_DROPDOWN(IDC_COMBODEVICE, &CSettingDlg::OnCbnDropdownCombodevice)
 END_MESSAGE_MAP()
 
 class videoDevice;
@@ -52,9 +73,9 @@ class IAMStreamConfig;
 class IGraphBuilder;
 class ICaptureGraphBuilder2;
 
-#define VI_MAX_CAMERAS  20
-#define VI_NUM_TYPES    20 
-#define VI_NUM_FORMATS  18
+#define VI_MAX_CAMERAS 20
+#define VI_NUM_TYPES 20
+#define VI_NUM_FORMATS 18
 
 class videoInput {
 
@@ -127,10 +148,10 @@ public:
     //bool setVideoSettingCam(int deviceID, long Property, long lValue, long Flags = NULL, bool useDefaultValue = false);
 
     //get width, height and number of pixels
-    int  getWidth(int deviceID) const;
-    int  getHeight(int deviceID) const;
-    int  getSize(int deviceID) const;
-    int  getFourcc(int deviceID) const;
+    int getWidth(int deviceID) const;
+    int getHeight(int deviceID) const;
+    int getSize(int deviceID) const;
+    int getFourcc(int deviceID) const;
     double getFPS(int deviceID) const;
 
     //completely stops and frees a device
@@ -140,7 +161,7 @@ public:
     bool restartDevice(int deviceID);
 
     //number of devices available
-    int  devicesFound;
+    int devicesFound;
 
     // mapping from OpenCV CV_CAP_PROP to videoinput/dshow properties
     int getVideoPropertyFromCV(int cv_property);
@@ -155,11 +176,11 @@ private:
     void setAttemptCaptureSize(int deviceID, int w, int h, GUID mediaType);
     bool setup(int deviceID);
     void processPixels(unsigned char* src, unsigned char* dst, int width, int height, bool bRGB, bool bFlip);
-    int  start(int deviceID, videoDevice* VD);
-    int  getDeviceCount();
+    int start(int deviceID, videoDevice* VD);
+    int getDeviceCount();
     void getMediaSubtypeAsString(GUID type, char* typeAsString);
     GUID* getMediaSubtypeFromFourcc(int fourcc);
-    int   getFourccFromMediaSubtype(GUID type) const;
+    int getFourccFromMediaSubtype(GUID type) const;
 
     void getVideoPropertyAsString(int prop, char* propertyAsString);
     void getCameraPropertyAsString(int prop, char* propertyAsString);
@@ -175,8 +196,8 @@ private:
     static bool comInit();
     static bool comUnInit();
 
-    int  connection;
-    int  callbackSetCount;
+    int connection;
+    int callbackSetCount;
     bool bCallback;
 
     GUID CAPTURE_MODE;
@@ -205,191 +226,166 @@ void CSettingDlg::UpdateDeviceList(void)
         ++iCameraNum;
         v.release();
     }
-	m_cDeviceCombo.ResetContent();
- 
-	for(int i =0;i<iCameraNum;++i)
-	{
+    m_cDeviceCombo.ResetContent();
+
+    for (int i = 0; i < iCameraNum; ++i) {
         if (auto err = _itoa_s(i, buf, 10); err == 0) {
             CStringA strDeviceNameA = buf;
             m_cDeviceCombo.AddString(CString(strDeviceNameA));
         }
-	}
+    }
 }
 
 BOOL CSettingDlg::OnInitDialog()
 {
-	CDialog::OnInitDialog();
-	
-	m_iSelectedAlg = DEF_ALG;
-	
-	m_iTmpHeight=DEF_TMP_HEIGHT;
-	m_iTmpWidth = DEF_TMP_WIDTH;
-	m_iAvgFaceFps = DEF_AVG_FPS_FACE;
-	m_iAvgEyeFps = DEF_AVG_FPS_EYE;
-	m_iFrameHeight=DEF_FRAME_HEIGHT;
-	m_iFrameWidth = DEF_FRAME_WIDTH;
-	
-	m_iFrameNumClick=DEF_FRAME_CLICK;
-	m_iThresholdClick=DEF_THRESHOLD_CLICK;
-	m_fVarrianceRatio=DEF_VARRATIO_CLICK;
-	m_fVarrianceRatio2=DEF_VARRATIO_CLICK2;
+    CDialog::OnInitDialog();
+
+    m_iSelectedAlg = DEF_ALG;
+
+    m_iTmpHeight = DEF_TMP_HEIGHT;
+    m_iTmpWidth = DEF_TMP_WIDTH;
+    m_iAvgFaceFps = DEF_AVG_FPS_FACE;
+    m_iAvgEyeFps = DEF_AVG_FPS_EYE;
+    m_iFrameHeight = DEF_FRAME_HEIGHT;
+    m_iFrameWidth = DEF_FRAME_WIDTH;
+
+    m_iFrameNumClick = DEF_FRAME_CLICK;
+    m_iThresholdClick = DEF_THRESHOLD_CLICK;
+    m_fVarrianceRatio = DEF_VARRATIO_CLICK;
+    m_fVarrianceRatio2 = DEF_VARRATIO_CLICK2;
 
     m_iAccH = DEF_ACC_H;
-	m_iAccV = DEF_ACC_V;
+    m_iAccV = DEF_ACC_V;
 
-	SetDlgItemInt(IDC_TMPH,m_iTmpHeight);
-	SetDlgItemInt(IDC_TMPW,m_iTmpWidth);
+    SetDlgItemInt(IDC_TMPH, m_iTmpHeight);
+    SetDlgItemInt(IDC_TMPW, m_iTmpWidth);
 
-	SetDlgItemInt(IDC_RAWH,m_iFrameHeight);
-	SetDlgItemInt(IDC_RAWW,m_iFrameWidth);
+    SetDlgItemInt(IDC_RAWH, m_iFrameHeight);
+    SetDlgItemInt(IDC_RAWW, m_iFrameWidth);
 
-	SetDlgItemInt(IDC_AVGF,m_iAvgFaceFps);
-	SetDlgItemInt(IDC_AVGE,m_iAvgEyeFps);
-	SetDlgItemInt(IDC_ACCH,m_iAccH);
-	SetDlgItemInt(IDC_ACCV,m_iAccV);
+    SetDlgItemInt(IDC_AVGF, m_iAvgFaceFps);
+    SetDlgItemInt(IDC_AVGE, m_iAvgEyeFps);
+    SetDlgItemInt(IDC_ACCH, m_iAccH);
+    SetDlgItemInt(IDC_ACCV, m_iAccV);
 
+    SetDlgItemInt(IDC_AVGFRAMENUM, m_iFrameNumClick);
+    SetDlgItemInt(IDC_VTHRESHOLD, m_iThresholdClick);
+    SetDlgItemDouble(this, IDC_RTHRESHOLD, m_fVarrianceRatio);
+    SetDlgItemDouble(this, IDC_RTHRESHOLD2, m_fVarrianceRatio2);
 
-	SetDlgItemInt(IDC_AVGFRAMENUM,m_iFrameNumClick);
-	SetDlgItemInt(IDC_VTHRESHOLD,m_iThresholdClick);
-	SetDlgItemDouble(this,IDC_RTHRESHOLD,m_fVarrianceRatio);
-	SetDlgItemDouble(this,IDC_RTHRESHOLD2,m_fVarrianceRatio2);
+    UpdateDeviceList();
 
-	UpdateDeviceList();
+    if (m_cDeviceCombo.GetCount() > 0) {
+        m_iSelectedCamera = 0;
+        m_cDeviceCombo.SetCurSel(m_iSelectedCamera);
+    } else
+        m_iSelectedCamera = -1;
 
-	if(m_cDeviceCombo.GetCount() > 0 )
-	{
-		m_iSelectedCamera = 0;
-		m_cDeviceCombo.SetCurSel(m_iSelectedCamera);
-	}
-	else
-		m_iSelectedCamera = -1;
+    m_cAlgList.AddString(L"CDF Analysis");
+    m_cAlgList.AddString(L"Edge Detection");
+    m_cAlgList.AddString(L"GPF Detection");
 
-	m_cAlgList.AddString(L"CDF Analysis");
-	m_cAlgList.AddString(L"Edge Detection");
-	m_cAlgList.AddString(L"GPF Detection");
+    m_cAlgList.SetCurSel(m_iSelectedAlg);
 
-	m_cAlgList.SetCurSel(m_iSelectedAlg);
+    m_bSupportClicking = DEF_SUP_CLICK;
+    m_bSupportDoubleClick = DEF_SUP_DBLCLICK;
 
-	m_bSupportClicking = DEF_SUP_CLICK;
-	m_bSupportDoubleClick = DEF_SUP_DBLCLICK;
+    CheckDlgButton(IDC_CSUPDBLCLICK, m_bSupportDoubleClick);
+    CheckDlgButton(IDC_CSUPCLICK, m_bSupportClicking);
 
-	CheckDlgButton(IDC_CSUPDBLCLICK,m_bSupportDoubleClick);
-	CheckDlgButton(IDC_CSUPCLICK,m_bSupportClicking);
-
-
-	return TRUE;  
+    return TRUE;
 }
 
 void CSettingDlg::OnCbnDropdownCombodevice()
 {
-	UpdateDeviceList();
+    UpdateDeviceList();
 }
-
-
 
 void CSettingDlg::Save()
 {
-	m_iTmpHeight = GetDlgItemInt(IDC_TMPH);
-	m_iTmpWidth =  GetDlgItemInt(IDC_TMPW);
-	m_iFrameHeight = GetDlgItemInt(IDC_RAWH);
-	m_iFrameWidth =  GetDlgItemInt(IDC_RAWW);
+    m_iTmpHeight = GetDlgItemInt(IDC_TMPH);
+    m_iTmpWidth = GetDlgItemInt(IDC_TMPW);
+    m_iFrameHeight = GetDlgItemInt(IDC_RAWH);
+    m_iFrameWidth = GetDlgItemInt(IDC_RAWW);
 
-	if(m_iTmpHeight <= 0)
-	{
-		m_iTmpHeight = DEF_TMP_HEIGHT;
-		SetDlgItemInt(IDC_TMPH,m_iTmpHeight);
-	}
-	if(m_iTmpWidth <= 0)
-	{
-		m_iTmpWidth = DEF_TMP_WIDTH;
-		SetDlgItemInt(IDC_TMPW,m_iTmpWidth);
-	}
+    if (m_iTmpHeight <= 0) {
+        m_iTmpHeight = DEF_TMP_HEIGHT;
+        SetDlgItemInt(IDC_TMPH, m_iTmpHeight);
+    }
+    if (m_iTmpWidth <= 0) {
+        m_iTmpWidth = DEF_TMP_WIDTH;
+        SetDlgItemInt(IDC_TMPW, m_iTmpWidth);
+    }
 
-	if(m_iFrameHeight <= 0)
-	{
-		m_iFrameHeight = DEF_FRAME_HEIGHT;
-		SetDlgItemInt(IDC_RAWH,m_iFrameHeight);
-	}
-	if(m_iFrameWidth <= 0)
-	{
-		m_iFrameWidth = DEF_FRAME_WIDTH;
-		SetDlgItemInt(IDC_RAWW,m_iFrameWidth);
-	}
+    if (m_iFrameHeight <= 0) {
+        m_iFrameHeight = DEF_FRAME_HEIGHT;
+        SetDlgItemInt(IDC_RAWH, m_iFrameHeight);
+    }
+    if (m_iFrameWidth <= 0) {
+        m_iFrameWidth = DEF_FRAME_WIDTH;
+        SetDlgItemInt(IDC_RAWW, m_iFrameWidth);
+    }
 
+    m_iAccH = DEF_ACC_H;
+    m_iAccV = DEF_ACC_V;
 
-	m_iAccH = DEF_ACC_H;
-	m_iAccV = DEF_ACC_V;
+    m_iAvgFaceFps = GetDlgItemInt(IDC_AVGF);
+    m_iAvgEyeFps = GetDlgItemInt(IDC_AVGE);
 
+    if (m_iAvgFaceFps == 0) {
+        m_iAvgFaceFps = DEF_AVG_FPS_FACE;
+        SetDlgItemInt(IDC_AVGF, m_iAvgFaceFps);
+    }
+    if (m_iAvgEyeFps == 0) {
+        m_iAvgEyeFps = DEF_AVG_FPS_EYE;
+        SetDlgItemInt(IDC_AVGE, m_iAvgEyeFps);
+    }
 
-	m_iAvgFaceFps = GetDlgItemInt(IDC_AVGF);
-	m_iAvgEyeFps =  GetDlgItemInt(IDC_AVGE);
+    m_iAccH = GetDlgItemInt(IDC_ACCH);
+    m_iAccV = GetDlgItemInt(IDC_ACCV);
 
-	if(m_iAvgFaceFps == 0)
-	{
-		m_iAvgFaceFps = DEF_AVG_FPS_FACE;
-		SetDlgItemInt(IDC_AVGF,m_iAvgFaceFps);
-	}
-	if(m_iAvgEyeFps == 0)
-	{
-		m_iAvgEyeFps = DEF_AVG_FPS_EYE;
-		SetDlgItemInt(IDC_AVGE,m_iAvgEyeFps);
-	}
+    if (m_iAccH <= 0) {
+        m_iAccH = DEF_ACC_H;
+    }
+    SetDlgItemInt(IDC_ACCH, m_iAccH);
 
-	m_iAccH = GetDlgItemInt(IDC_ACCH);
-	m_iAccV = GetDlgItemInt(IDC_ACCV);
+    if (m_iAccV <= 0) {
+        m_iAccV = DEF_ACC_V;
+    }
+    SetDlgItemInt(IDC_ACCV, m_iAccV);
 
-	if(m_iAccH <= 0)
-	{
-		m_iAccH = DEF_ACC_H;
-	}
-	SetDlgItemInt(IDC_ACCH,m_iAccH);
+    m_iFrameNumClick = GetDlgItemInt(IDC_AVGFRAMENUM);
+    m_iThresholdClick = GetDlgItemInt(IDC_VTHRESHOLD);
 
-	if(m_iAccV <= 0)
-	{
-		m_iAccV = DEF_ACC_V;
-	}
-	SetDlgItemInt(IDC_ACCV,m_iAccV);
-	
+    if (m_iFrameNumClick <= 0) {
+        m_iFrameNumClick = DEF_FRAME_CLICK;
+        SetDlgItemInt(IDC_AVGFRAMENUM, m_iFrameNumClick);
+    }
+    if (m_iThresholdClick <= 0 || m_iThresholdClick > 255) {
+        m_iThresholdClick = DEF_THRESHOLD_CLICK;
+        SetDlgItemInt(IDC_VTHRESHOLD, m_iThresholdClick);
+    }
 
-	m_iFrameNumClick = GetDlgItemInt(IDC_AVGFRAMENUM);
-	m_iThresholdClick =  GetDlgItemInt(IDC_VTHRESHOLD);
+    m_fVarrianceRatio = GetDlgItemDouble(this, IDC_RTHRESHOLD);
 
-	if(m_iFrameNumClick <= 0)
-	{
-		m_iFrameNumClick = DEF_FRAME_CLICK;
-		SetDlgItemInt(IDC_AVGFRAMENUM,m_iFrameNumClick);
-	}
-	if(m_iThresholdClick <= 0 || m_iThresholdClick> 255)
-	{
-		m_iThresholdClick = DEF_THRESHOLD_CLICK;
-		SetDlgItemInt(IDC_VTHRESHOLD,m_iThresholdClick);
-	}
+    if (m_fVarrianceRatio <= 0 || m_fVarrianceRatio > 1) {
+        m_fVarrianceRatio = DEF_VARRATIO_CLICK;
+        SetDlgItemDouble(this, IDC_RTHRESHOLD, m_fVarrianceRatio);
+    }
+    m_fVarrianceRatio2 = GetDlgItemDouble(this, IDC_RTHRESHOLD2);
 
-	m_fVarrianceRatio = GetDlgItemDouble(this,IDC_RTHRESHOLD);
+    if (m_fVarrianceRatio <= 0 || m_fVarrianceRatio > 1) {
+        m_fVarrianceRatio2 = DEF_VARRATIO_CLICK2;
+        SetDlgItemDouble(this, IDC_RTHRESHOLD2, m_fVarrianceRatio2);
+    }
 
-	if(m_fVarrianceRatio <= 0 || m_fVarrianceRatio> 1)
-	{
-		m_fVarrianceRatio = DEF_VARRATIO_CLICK;
-		SetDlgItemDouble(this,IDC_RTHRESHOLD,m_fVarrianceRatio);
-	}
-	m_fVarrianceRatio2 = GetDlgItemDouble(this,IDC_RTHRESHOLD2);
+    m_iSelectedCamera = m_cDeviceCombo.GetCurSel();
+    if (m_iSelectedCamera == -1 && m_cDeviceCombo.GetCount()) {
+        m_iSelectedCamera = 0;
+        m_cDeviceCombo.SetCurSel(m_iSelectedCamera);
+    }
+    m_iSelectedAlg = m_cAlgList.GetCurSel();
 
-	if(m_fVarrianceRatio <= 0 || m_fVarrianceRatio> 1)
-	{
-		m_fVarrianceRatio2 = DEF_VARRATIO_CLICK2;
-		SetDlgItemDouble(this,IDC_RTHRESHOLD2,m_fVarrianceRatio2);
-	}
-
-
-	m_iSelectedCamera = m_cDeviceCombo.GetCurSel();
-	if(m_iSelectedCamera== -1 && m_cDeviceCombo.GetCount())
-	{
-		m_iSelectedCamera = 0;
-		m_cDeviceCombo.SetCurSel(m_iSelectedCamera);
-	}
-	m_iSelectedAlg = m_cAlgList.GetCurSel();
-	
-	m_bSupportClicking =  IsDlgButtonChecked(IDC_CSUPCLICK);
-	m_bSupportDoubleClick =  IsDlgButtonChecked(IDC_CSUPDBLCLICK);
-
+    m_bSupportClicking = IsDlgButtonChecked(IDC_CSUPCLICK);
+    m_bSupportDoubleClick = IsDlgButtonChecked(IDC_CSUPDBLCLICK);
 }

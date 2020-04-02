@@ -1,34 +1,48 @@
-// EyeTrackerDlg.cpp : implementation file
-//
+/*
+MIT License
+
+Copyright (c) 2020 Przemyslaw Koziol
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+*/
 
 #include "stdafx.h"
-#include "EyeTracker.h"
-#include "EyeTrackerDlg.h"
+#include "EyeTracker.hpp"
+#include "EyeTrackerDlg.hpp"
 
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
-
-
-// CAboutDlg dialog used for App About
-
-class CAboutDlg : public CDialog
-{
+class CAboutDlg : public CDialog {
 public:
     CAboutDlg();
 
-    // Dialog Data
     enum { IDD = IDD_ABOUTBOX };
 
 protected:
-    virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
+    virtual void DoDataExchange(CDataExchange* pDX);
 
-// Implementation
+ 
 protected:
     DECLARE_MESSAGE_MAP()
 };
 
-CAboutDlg::CAboutDlg() : CDialog(CAboutDlg::IDD)
+CAboutDlg::CAboutDlg()
+    : CDialog(CAboutDlg::IDD)
 {
 }
 
@@ -41,10 +55,8 @@ BEGIN_MESSAGE_MAP(CAboutDlg, CDialog)
 END_MESSAGE_MAP()
 
 
-// CEyeTrackerDlg dialog
 
 CEyeTrackerDlg* EyeTrackerDlg;
-
 
 CEyeTrackerDlg::CEyeTrackerDlg(CWnd* pParent /*=NULL*/)
     : CDialog(CEyeTrackerDlg::IDD, pParent)
@@ -59,50 +71,37 @@ void CEyeTrackerDlg::DoDataExchange(CDataExchange* pDX)
 }
 
 BEGIN_MESSAGE_MAP(CEyeTrackerDlg, CDialog)
-    ON_WM_SYSCOMMAND()
-    ON_WM_PAINT()
-    ON_WM_QUERYDRAGICON()
-    //}}AFX_MSG_MAP
-//	ON_NOTIFY(TCN_SELCHANGE, IDC_TAB, &CEyeTrackerDlg::OnTcnSelchangeTab)
+ON_WM_SYSCOMMAND()
+ON_WM_PAINT()
+ON_WM_QUERYDRAGICON()
+
 ON_COMMAND(ID_MENU_EXIT, &CEyeTrackerDlg::OnMenuExit)
 ON_COMMAND(ID_MENU_ABOUT, &CEyeTrackerDlg::OnMenuAbout)
 ON_MESSAGE(WM_NOTIFYICON, &CEyeTrackerDlg::OnTrayNotify)
 ON_WM_DESTROY()
-//ON_WM_KEYDOWN()
+
 END_MESSAGE_MAP()
 
-
-// CEyeTrackerDlg message handlers
 
 BOOL CEyeTrackerDlg::OnInitDialog()
 {
     CDialog::OnInitDialog();
 
-    // Add "About..." menu item to system menu.
-
-    // IDM_ABOUTBOX must be in the system command range.
     ASSERT((IDM_ABOUTBOX & 0xFFF0) == IDM_ABOUTBOX);
     ASSERT(IDM_ABOUTBOX < 0xF000);
 
     CMenu* pSysMenu = GetSystemMenu(FALSE);
-    if (pSysMenu != NULL)
-    {
+    if (pSysMenu != NULL) {
         CString strAboutMenu;
         strAboutMenu.LoadString(IDS_ABOUTBOX);
-        if (!strAboutMenu.IsEmpty())
-        {
+        if (!strAboutMenu.IsEmpty()) {
             pSysMenu->AppendMenu(MF_SEPARATOR);
             pSysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
         }
     }
 
-    // Set the icon for this dialog.  The framework does this automatically
-    //  when the application's main window is not a dialog
-    SetIcon(m_hIcon, TRUE);			// Set big icon
-    SetIcon(m_hIcon, FALSE);		// Set small icon
-
-    // TODO: Add extra initialization here
-
+    SetIcon(m_hIcon, TRUE); // Set big icon
+    SetIcon(m_hIcon, FALSE); // Set small icon
 
     m_cTabCtrl.InitDialogs();
     TCITEM tcItem;
@@ -125,10 +124,10 @@ BOOL CEyeTrackerDlg::OnInitDialog()
 
     m_cTabCtrl.ActivateTabDialogs();
 
-
     CString sTip(_T("Eye Tracker"));
     m_cTnd.cbSize = sizeof(NOTIFYICONDATA);
-    m_cTnd.hWnd = this->GetSafeHwnd();;
+    m_cTnd.hWnd = this->GetSafeHwnd();
+    ;
     m_cTnd.uID = IDR_MAINFRAME;
 
     m_cTnd.uCallbackMessage = WM_NOTIFYICON;
@@ -138,39 +137,31 @@ BOOL CEyeTrackerDlg::OnInitDialog()
     lstrcpyn(m_cTnd.szTip, (LPCTSTR)sTip, sizeof(m_cTnd.szTip));
     m_cTrayMenu.LoadMenu(IDR_MENU);
 
-
     EyeTrackerDlg = this;
 
     Log(L"Starting EyeTracker");
 
-    return TRUE;  // return TRUE  unless you set the focus to a control
+    return TRUE;
 }
 
 void CEyeTrackerDlg::OnSysCommand(UINT nID, LPARAM lParam)
 {
     CDialog::OnSysCommand(nID, lParam);
 
-    if (nID == SC_MINIMIZE)
-    {
+    if (nID == SC_MINIMIZE) {
         DWORD dwMessage = NIM_ADD;
         ShowWindow(SW_HIDE);
         Shell_NotifyIcon(dwMessage, &m_cTnd);
     }
 }
 
-// If you add a minimize button to your dialog, you will need the code below
-//  to draw the icon.  For MFC applications using the document/view model,
-//  this is automatically done for you by the framework.
-
 void CEyeTrackerDlg::OnPaint()
 {
-    if (IsIconic())
-    {
-        CPaintDC dc(this); // device context for painting
+    if (IsIconic()) {
+        CPaintDC dc(this);
 
         SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
 
-        // Center icon in client rectangle
         int cxIcon = GetSystemMetrics(SM_CXICON);
         int cyIcon = GetSystemMetrics(SM_CYICON);
         CRect rect;
@@ -178,27 +169,18 @@ void CEyeTrackerDlg::OnPaint()
         int x = (rect.Width() - cxIcon + 1) / 2;
         int y = (rect.Height() - cyIcon + 1) / 2;
 
-        // Draw the icon
+     
         dc.DrawIcon(x, y, m_hIcon);
-    }
-    else
-    {
+    } else {
         CDialog::OnPaint();
     }
 }
 
-// The system calls this function to obtain the cursor to display while the user drags
-//  the minimized window.
 HCURSOR CEyeTrackerDlg::OnQueryDragIcon()
 {
     return static_cast<HCURSOR>(m_hIcon);
 }
 
-//void CEyeTrackerDlg::OnTcnSelchangeTab(NMHDR *pNMHDR, LRESULT *pResult)
-//{
-//	// TODO: Add your control notification handler code here
-//	*pResult = 0;
-//}
 
 void CEyeTrackerDlg::Log(CString strMessage)
 {
@@ -221,15 +203,12 @@ void CEyeTrackerDlg::OnMenuExit()
 void CEyeTrackerDlg::OnMenuAbout()
 {
     CAboutDlg cAboutDlg;
-    //cAboutDlg.Create(IDD_ABOUTBOX,NULL);
     cAboutDlg.DoModal();
-
 }
 LRESULT CEyeTrackerDlg::OnTrayNotify(WPARAM wParam, LPARAM lParam)
 {
     UINT uMsg = (UINT)lParam;
-    switch (uMsg)
-    {
+    switch (uMsg) {
     case WM_LBUTTONDBLCLK:
         this->ShowWindow(SW_SHOW);
         SendMessage(WM_SYSCOMMAND, SC_RESTORE, 0);
@@ -246,10 +225,5 @@ LRESULT CEyeTrackerDlg::OnTrayNotify(WPARAM wParam, LPARAM lParam)
 }
 void CEyeTrackerDlg::OnDestroy()
 {
-
-
     CDialog::OnDestroy();
-
-    // TODO: Add your message handler code here
 }
-

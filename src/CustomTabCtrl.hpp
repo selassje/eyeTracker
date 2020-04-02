@@ -23,7 +23,28 @@ SOFTWARE.
 
 */
 
-#include "stdafx.h"
-#include "Graph.hpp"
+#ifndef CUSTOMTABDLG_HPP
+#define CUSTOMTABDLG_HPP
 
-IMPLEMENT_DYNCREATE(CGraph, CWnd)
+class CCustomTabCtrl : public CTabCtrl {
+    DECLARE_DYNAMIC(CCustomTabCtrl)
+
+private:
+    int m_DialogID[5];
+    int m_nPageCount;
+    CDialog* m_Dialog[5];
+    int m_iCurrentPage;
+
+public:
+    CCustomTabCtrl();
+    virtual ~CCustomTabCtrl();
+    void InitDialogs();
+    void ActivateTabDialogs();
+
+protected:
+    DECLARE_MESSAGE_MAP()
+public:
+    afx_msg void OnTcnSelchange(NMHDR* pNMHDR, LRESULT* pResult);
+};
+
+#endif
