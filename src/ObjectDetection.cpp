@@ -831,7 +831,7 @@ BOOL CObjectDetection::DetectBlink(IplImage *pEyeImg,
 		iHeight = pMeanMap->height;
 	}
 
-	int qSize = qLastFrames.size();
+	auto qSize = qLastFrames.size();
 	
 	if(qSize< iLastFramesNumber)
 	{
