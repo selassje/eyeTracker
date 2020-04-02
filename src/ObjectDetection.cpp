@@ -569,7 +569,7 @@ CvPoint CObjectDetection::DetectPupilGPF(IplImage* pEyeImg)
     }
 
     int iEyeLid1 = qGPFH.top().first;
-    int iEyeLid2;
+    int iEyeLid2 {};
     qGPFH.pop();
     while (!qGPFH.empty()) {
         iEyeLid2 = qGPFH.top().first;
@@ -623,7 +623,7 @@ CvPoint CObjectDetection::DetectPupilGPF(IplImage* pEyeImg)
     }
 
     int iEyeCor1 = qGPFV.top().first;
-    int iEyeCor2;
+    int iEyeCor2 {};
     qGPFV.pop();
 
     while (!qGPFV.empty()) {
@@ -732,7 +732,7 @@ double CObjectDetection::GPFV(IplImage* pImg, int iX, int iY1, int iY2, double d
     return dResult;
 }
 
-BOOL CObjectDetection::DetectLeftBlink(IplImage* pEyeImg, int iLastFramesNumber, int iVarrianceThreshold, double dRatioThreshold, BOOL bReset)
+BOOL CObjectDetection::DetectLeftBlink(IplImage* pEyeImg, size_t iLastFramesNumber, int iVarrianceThreshold, double dRatioThreshold, BOOL bReset)
 {
     static CvMat* pMeanMap = NULL;
     static CvMat* pVarrianceMap = NULL;
@@ -740,7 +740,7 @@ BOOL CObjectDetection::DetectLeftBlink(IplImage* pEyeImg, int iLastFramesNumber,
     return DetectBlink(pEyeImg, iLastFramesNumber, iVarrianceThreshold, dRatioThreshold, pMeanMap, pVarrianceMap, qLastFrames, bReset);
 }
 
-BOOL CObjectDetection::DetectRightBlink(IplImage* pEyeImg, int iLastFramesNumber, int iVarrianceThreshold, double dRatioThreshold, BOOL bReset)
+BOOL CObjectDetection::DetectRightBlink(IplImage* pEyeImg, size_t iLastFramesNumber, int iVarrianceThreshold, double dRatioThreshold, BOOL bReset)
 {
     static CvMat* pMeanMap = NULL;
     static CvMat* pVarrianceMap = NULL;
@@ -749,7 +749,7 @@ BOOL CObjectDetection::DetectRightBlink(IplImage* pEyeImg, int iLastFramesNumber
 }
 
 BOOL CObjectDetection::DetectBlink(IplImage* pEyeImg,
-    int iLastFramesNumber,
+    size_t iLastFramesNumber,
     int iVarrianceThreshold,
     double dRatioThreshold,
     CvMat*& pMeanMap,
@@ -818,12 +818,12 @@ BOOL CObjectDetection::DetectBlink(IplImage* pEyeImg,
         for (int x = iXStart; x < iWidth; ++x)
             for (int y = 0; y < iHeight; ++y) {
 
-                int iSum = 0;
+                size_t iSum = 0;
                 for (auto it = qLastFrames.begin(); it != qLastFrames.end(); ++it) {
                     iSum += (int)cvGet2D(*it, y, x).val[0];
                 }
 
-                int mean = iSum / iLastFramesNumber;
+                auto mean = static_cast<size_t>(iSum / iLastFramesNumber);
 
                 iSum = 0;
                 for (auto it = qLastFrames.begin(); it != qLastFrames.end(); ++it) {
@@ -831,7 +831,7 @@ BOOL CObjectDetection::DetectBlink(IplImage* pEyeImg,
                     iSum += (iIntensity - mean) * (iIntensity - mean);
                 }
 
-                int var = iSum / iLastFramesNumber;
+                auto var = static_cast<size_t>(iSum / iLastFramesNumber);
 
                 if (var > iVarrianceThreshold) {
                     ++iTresholdedPixels;
@@ -839,8 +839,8 @@ BOOL CObjectDetection::DetectBlink(IplImage* pEyeImg,
                     cvSet2D(pVarrianceThesholded, y, x, cvScalar(255));
 #endif
                 }
-                cvSet2D(pMeanMap, y, x, cvScalar(mean));
-                cvSet2D(pVarrianceMap, y, x, cvScalar(var));
+                cvSet2D(pMeanMap, y, x, cvScalar(static_cast<double>(mean)));
+                cvSet2D(pVarrianceMap, y, x, cvScalar(static_cast<double>(var)));
             }
 
 #ifdef DEBUG

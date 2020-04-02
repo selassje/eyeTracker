@@ -38,8 +38,8 @@ public:
     static CvPoint DetectPupilCDF(IplImage* pEyeImg);
     static CvPoint DetectPupilGPF(IplImage* pEyeImg);
     static CvPoint DetectPupilEdge(IplImage* pEyeImg);
-    static BOOL DetectLeftBlink(IplImage* pEyeImg, int iLastFramesNumber, int iVarrianceThreshold, double dRatioThreshold, BOOL bReset = FALSE);
-    static BOOL DetectRightBlink(IplImage* pEyeImg, int iLastFramesNumber, int iVarrianceThreshold, double dRatioThreshold, BOOL bReset = FALSE);
+    static BOOL DetectLeftBlink(IplImage* pEyeImg, size_t iLastFramesNumber, int iVarrianceThreshold, double dRatioThreshold, BOOL bReset = FALSE);
+    static BOOL DetectRightBlink(IplImage* pEyeImg, size_t iLastFramesNumber, int iVarrianceThreshold, double dRatioThreshold, BOOL bReset = FALSE);
     static void Clear();
 
 private:
@@ -49,7 +49,7 @@ private:
     static CvHaarClassifierCascade* m_pEyesSmallCascade;
     static CvMemStorage* m_pStorage;
 
-    static BOOL DetectBlink(IplImage* pEyeImg, int iLastFramesNumber,
+    static BOOL DetectBlink(IplImage* pEyeImg, size_t iLastFramesNumber,
         int iVarrianceThreshold, double dRatioThreshold, CvMat*& pMeanMap,
         CvMat*& pVarrianceMap, std::deque<IplImage*>& qFrames, BOOL bReset = FALSE);
     static double IPFH(IplImage* pImg, int iY, int iX1, int iX2);

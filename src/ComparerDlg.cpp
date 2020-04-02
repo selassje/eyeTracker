@@ -464,7 +464,7 @@ void CComparerDlg::OnBnClickedExport()
             auto it_gpf = m_GPFPoints.begin();
             auto it_edge = m_EdgePoints.begin();
 
-            for (int i = 0; i < iPoints; ++i) {
+            for (size_t i = 0; i < iPoints; ++i) {
                 double t = it_cdf->first;
                 CString strLine;
                 strLine.Format(L"%f", t);
