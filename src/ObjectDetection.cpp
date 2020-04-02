@@ -134,10 +134,8 @@ void CObjectDetection::DetectEyes(IplImage* img, CvRect* pFace, CvRect* pLeftEye
 
         CvRect* pEyeRect = (CvRect*)cvGetSeqElem(pEyes, i);
 
-        if (pFace) {
-            pEyeRect->x += pFace->x;
-            pEyeRect->y = pFace->y + pEyeRect->y + iSearchImageHeightOffset;
-        }
+        pEyeRect->x += pFace->x;
+        pEyeRect->y = pFace->y + pEyeRect->y + iSearchImageHeightOffset;
 
         int iEyeX = pEyeRect->x + pEyeRect->width / 2;
         int iDistFromLeft = iEyeX - pFace->x;
@@ -409,9 +407,9 @@ CvPoint CObjectDetection::DetectPupilEdge(IplImage* pEyeImg)
         for (int y = 0; y < pCannyEyeImg->height; ++y) {
             if (y > iLimitY)
 
-                if (cvGet2D(pCannyEyeImg, y, x).val[0] != 0) {
+                if (fabs(cvGet2D(pCannyEyeImg, y, x).val[0]) > 0.0) {
                     if (mVIntersections.find(x) == mVIntersections.end()) {
-                        mVIntersections.insert(std::make_pair(x, 1));
+                        mVIntersections.emplace(x, 1);
                     } else
                         mVIntersections[x] = mVIntersections[x] + 1;
                 }
@@ -419,9 +417,9 @@ CvPoint CObjectDetection::DetectPupilEdge(IplImage* pEyeImg)
     for (int y = 0; y < pCannyEyeImg->height; ++y)
         for (int x = 0; x < pCannyEyeImg->width; ++x) {
             if (y > iLimitY)
-                if (cvGet2D(pCannyEyeImg, y, x).val[0] != 0) {
+                if (fabs(cvGet2D(pCannyEyeImg, y, x).val[0]) > 0.0) {
                     if (mHIntersections.find(y) == mHIntersections.end()) {
-                        mHIntersections.insert(std::make_pair(y, 1));
+                        mHIntersections.emplace(y, 1);
                     } else
                         mHIntersections[y] = mHIntersections[y] + 1;
                 }
@@ -820,14 +818,14 @@ BOOL CObjectDetection::DetectBlink(IplImage* pEyeImg,
 
                 size_t iSum = 0;
                 for (auto it = qLastFrames.begin(); it != qLastFrames.end(); ++it) {
-                    iSum += (int)cvGet2D(*it, y, x).val[0];
+                    iSum += static_cast<size_t>(cvGet2D(*it, y, x).val[0]);
                 }
 
                 auto mean = static_cast<size_t>(iSum / iLastFramesNumber);
 
                 iSum = 0;
                 for (auto it = qLastFrames.begin(); it != qLastFrames.end(); ++it) {
-                    int iIntensity = (int)cvGet2D(*it, y, x).val[0];
+                    size_t iIntensity = static_cast<size_t>(cvGet2D(*it, y, x).val[0]);
                     iSum += (iIntensity - mean) * (iIntensity - mean);
                 }
 
@@ -867,7 +865,7 @@ BOOL CObjectDetection::DetectBlink(IplImage* pEyeImg,
         cvReleaseImage(&pDisplay4);
         cvReleaseImage(&pVarrianceThesholded);
 #endif
-        double varRatio = ((double)iTresholdedPixels) / (iHeight * (iWidth - iXStart));
+        double varRatio = (iTresholdedPixels) / (static_cast<double>(iHeight) * (iWidth - iXStart));
         if (varRatio > dRatioThreshold) {
             while (qLastFrames.size()) {
                 cvReleaseImage(&qLastFrames.back());
