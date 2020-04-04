@@ -28,6 +28,14 @@ SOFTWARE.
 
 class CPicture : public COleDispatchDriver {
 public:
+    enum {
+        ID_HANDLE = 0x0,
+        ID_HPAL = 0x2,
+        ID_TYPE = 0x3,
+        ID_WIDTH = 0x4,
+        ID_HEIGHT = 0x5
+    };
+
     CPicture() {}
     CPicture(LPDISPATCH pDispatch)
         : COleDispatchDriver(pDispatch)
@@ -41,40 +49,40 @@ public:
     long GetHandle()
     {
         long result;
-        GetProperty(0x0, VT_I4, (void*)&result);
+        GetProperty(ID_HANDLE, VT_I4, (void*)&result);
         return result;
     }
 
     long GetHPal()
     {
         long result;
-        GetProperty(0x2, VT_I4, (void*)&result);
+        GetProperty(ID_HPAL, VT_I4, (void*)&result);
         return result;
     }
 
     void SetHPal(long propVal)
     {
-        SetProperty(0x2, VT_I4, propVal);
+        SetProperty(ID_HPAL, VT_I4, propVal);
     }
 
     short GetType()
     {
         short result;
-        GetProperty(0x3, VT_I2, (void*)&result);
+        GetProperty(ID_TYPE, VT_I2, (void*)&result);
         return result;
     }
 
     long GetWidth()
     {
         long result;
-        GetProperty(0x4, VT_I4, (void*)&result);
+        GetProperty(ID_WIDTH, VT_I4, (void*)&result);
         return result;
     }
 
     long GetHeight()
     {
         long result;
-        GetProperty(0x5, VT_I4, (void*)&result);
+        GetProperty(ID_HEIGHT, VT_I4, (void*)&result);
         return result;
     }
 };

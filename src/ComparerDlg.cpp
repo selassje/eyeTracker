@@ -261,7 +261,7 @@ void CComparerDlg::OnBnClickedButton2()
                             } else if (m_GPFPoints.find(dMaxError) == m_GPFPoints.end())
                                 m_GPFPoints.emplace(dMaxError, 0);
 
-                            if (dMaxError + dInterval > m_dErrorThreshold && dMaxError != m_dErrorThreshold) {
+                            if (fabs(dMaxError - dInterval) > m_dErrorThreshold && fabs(dMaxError - m_dErrorThreshold) > 0) {
                                 dMaxError = m_dErrorThreshold - dInterval;
                             }
                         }

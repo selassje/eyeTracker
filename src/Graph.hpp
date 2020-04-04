@@ -167,7 +167,7 @@ public:
     void SaveAs(LPCTSTR szFilename)
     {
         static BYTE parms[] = VTS_BSTR;
-        InvokeHelper(0x3f, DISPATCH_METHOD, VT_EMPTY, NULL, parms, szFilename);
+        InvokeHelper(0x3f, DISPATCH_METHOD, VT_EMPTY, NULL, parms, szFilename); //-V111
     }
     void AddAnnotation()
     {
@@ -255,12 +255,12 @@ public:
     unsigned long GetCursorColor()
     {
         unsigned long result;
-        GetProperty(0x4, VT_UI4, (void*)&result);
+        GetProperty(0x4, VT_UI4, (void*)&result); //-V112
         return result;
     }
     void SetCursorColor(unsigned long propVal)
     {
-        SetProperty(0x4, VT_UI4, propVal);
+        SetProperty(0x4, VT_UI4, propVal); //-V112
     }
     COleFont GetLabelFont()
     {
@@ -270,7 +270,7 @@ public:
     }
     void SetLabelFont(LPDISPATCH propVal)
     {
-        SetProperty(0x2b, VT_DISPATCH, propVal);
+        SetProperty(0x2b, VT_DISPATCH, propVal); //-V111
     }
     COleFont GetTickFont()
     {
@@ -280,7 +280,7 @@ public:
     }
     void SetTickFont(LPDISPATCH propVal)
     {
-        SetProperty(0x2c, VT_DISPATCH, propVal);
+        SetProperty(0x2c, VT_DISPATCH, propVal); //-V111
     }
     COleFont GetTitleFont()
     {
@@ -290,7 +290,7 @@ public:
     }
     void SetTitleFont(LPDISPATCH propVal)
     {
-        SetProperty(0x2d, VT_DISPATCH, propVal);
+        SetProperty(0x2d, VT_DISPATCH, propVal); //-V111
     }
     COleFont GetIdentFont()
     {
@@ -300,7 +300,7 @@ public:
     }
     void SetIdentFont(LPDISPATCH propVal)
     {
-        SetProperty(0x2e, VT_DISPATCH, propVal);
+        SetProperty(0x2e, VT_DISPATCH, propVal); //-V111
     }
     short GetXGridNumber()
     {
@@ -480,7 +480,7 @@ public:
     }
     void SetControlFramePicture(LPDISPATCH propVal)
     {
-        SetProperty(0x30, VT_DISPATCH, propVal);
+        SetProperty(0x30, VT_DISPATCH, propVal); //-V111
     }
     CPicture GetPlotAreaPicture()
     {
@@ -490,7 +490,7 @@ public:
     }
     void SetPlotAreaPicture(LPDISPATCH propVal)
     {
-        SetProperty(0x31, VT_DISPATCH, propVal);
+        SetProperty(0x31, VT_DISPATCH, propVal); //-V111
     }
     unsigned long GetControlFrameColor()
     {
@@ -625,12 +625,12 @@ public:
     unsigned long GetAnnoLabelBkColor()
     {
         unsigned long result;
-        GetProperty(0x20, VT_UI4, (void*)&result);
+        GetProperty(0x20, VT_UI4, (void*)&result); //-V112
         return result;
     }
     void SetAnnoLabelBkColor(unsigned long propVal)
     {
-        SetProperty(0x20, VT_UI4, propVal);
+        SetProperty(0x20, VT_UI4, propVal); //-V112
     }
     short GetCursorCount()
     {

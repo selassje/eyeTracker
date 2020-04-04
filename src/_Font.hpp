@@ -28,6 +28,18 @@ SOFTWARE.
 
 class COleFont : public COleDispatchDriver {
 public:
+    struct ID {
+        enum {
+            NAME = 0x0,
+            SIZE = 0x2,
+            BOLD = 0x3,
+            ITALIC = 0x4,
+            UNDERLINE = 0x5,
+            STRIKETHROUGH = 0x6,
+            WEIGHT = 0x7,
+            CHARSET = 0x8,
+        };
+    };
     COleFont() {}
     COleFont(LPDISPATCH pDispatch)
         : COleDispatchDriver(pDispatch)
@@ -41,97 +53,97 @@ public:
     CString GetName()
     {
         CString result;
-        GetProperty(0x0, VT_BSTR, (void*)&result);
+        GetProperty(ID::NAME, VT_BSTR, (void*)&result);
         return result;
     }
 
     void SetName(LPCTSTR propVal)
     {
-        SetProperty(0x0, VT_BSTR, propVal);
+        SetProperty(ID::NAME, VT_BSTR, propVal); //-V111
     }
 
     CY GetSize()
     {
         CY result;
-        GetProperty(0x2, VT_CY, (void*)&result);
+        GetProperty(ID::SIZE, VT_CY, (void*)&result);
         return result;
     }
 
     void SetSize(const CY& propVal)
     {
-        SetProperty(0x2, VT_CY, &propVal);
+        SetProperty(ID::SIZE, VT_CY, &propVal); //-V111
     }
 
     BOOL GetBold()
     {
         BOOL result;
-        GetProperty(0x3, VT_BOOL, (void*)&result);
+        GetProperty(ID::BOLD, VT_BOOL, (void*)&result);
         return result;
     }
 
     void SetBold(BOOL propVal)
     {
-        SetProperty(0x3, VT_BOOL, propVal);
+        SetProperty(ID::BOLD, VT_BOOL, propVal);
     }
 
     BOOL GetItalic()
     {
         BOOL result;
-        GetProperty(0x4, VT_BOOL, (void*)&result);
+        GetProperty(ID::ITALIC, VT_BOOL, (void*)&result);
         return result;
     }
 
     void SetItalic(BOOL propVal)
     {
-        SetProperty(0x4, VT_BOOL, propVal);
+        SetProperty(ID::ITALIC, VT_BOOL, propVal);
     }
 
     BOOL GetUnderline()
     {
         BOOL result;
-        GetProperty(0x5, VT_BOOL, (void*)&result);
+        GetProperty(ID::UNDERLINE, VT_BOOL, (void*)&result);
         return result;
     }
 
     void SetUnderline(BOOL propVal)
     {
-        SetProperty(0x5, VT_BOOL, propVal);
+        SetProperty(ID::UNDERLINE, VT_BOOL, propVal);
     }
 
     BOOL GetStrikethrough()
     {
         BOOL result;
-        GetProperty(0x6, VT_BOOL, (void*)&result);
+        GetProperty(ID::STRIKETHROUGH, VT_BOOL, (void*)&result);
         return result;
     }
 
     void SetStrikethrough(BOOL propVal)
     {
-        SetProperty(0x6, VT_BOOL, propVal);
+        SetProperty(ID::STRIKETHROUGH, VT_BOOL, propVal);
     }
 
     short GetWeight()
     {
         short result;
-        GetProperty(0x7, VT_I2, (void*)&result);
+        GetProperty(ID::WEIGHT, VT_I2, (void*)&result);
         return result;
     }
 
     void SetWeight(short propVal)
     {
-        SetProperty(0x7, VT_I2, propVal);
+        SetProperty(ID::WEIGHT, VT_I2, propVal);
     }
 
     short GetCharset()
     {
         short result;
-        GetProperty(0x8, VT_I2, (void*)&result);
+        GetProperty(ID::CHARSET, VT_I2, (void*)&result);
         return result;
     }
 
     void SetCharset(short propVal)
     {
-        SetProperty(0x8, VT_I2, propVal);
+        SetProperty(ID::CHARSET, VT_I2, propVal);
     }
 };
 
