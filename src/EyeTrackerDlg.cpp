@@ -108,19 +108,19 @@ BOOL CEyeTrackerDlg::OnInitDialog()
     tcItem.mask = TCIF_TEXT;
 
     tcItem.pszText = _T("Camera");
-    m_cTabCtrl.InsertItem(0, &tcItem);
+    m_cTabCtrl.InsertItem(CAMERA_TAB, &tcItem);
 
     tcItem.pszText = _T("Settings");
-    m_cTabCtrl.InsertItem(1, &tcItem);
+    m_cTabCtrl.InsertItem(SETTINGS_TAB, &tcItem);
 
     tcItem.pszText = _T("Logs");
-    m_cTabCtrl.InsertItem(2, &tcItem);
+    m_cTabCtrl.InsertItem(LOGS_TAB, &tcItem);
 
     tcItem.pszText = _T("Image");
-    m_cTabCtrl.InsertItem(3, &tcItem);
+    m_cTabCtrl.InsertItem(IMAGE_TAB, &tcItem);
 
     tcItem.pszText = _T("Comparer");
-    m_cTabCtrl.InsertItem(4, &tcItem);
+    m_cTabCtrl.InsertItem(COMPARER_TAB, &tcItem);
 
     m_cTabCtrl.ActivateTabDialogs();
 
@@ -134,7 +134,7 @@ BOOL CEyeTrackerDlg::OnInitDialog()
     m_cTnd.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
     m_cTnd.hIcon = LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDR_MAINFRAME));
 
-    lstrcpyn(m_cTnd.szTip, (LPCTSTR)sTip, sizeof(m_cTnd.szTip));
+    wcsncpy_s(m_cTnd.szTip, (LPCTSTR)sTip, sizeof(m_cTnd.szTip) / sizeof(m_cTnd.szTip[0]));
     m_cTrayMenu.LoadMenu(IDR_MENU);
 
     EyeTrackerDlg = this;

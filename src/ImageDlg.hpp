@@ -42,14 +42,14 @@ protected:
 private:
     IplImage* GetRightEyeImg(void);
     IplImage* GetLeftEyeImg(void);
-    int m_iLeftEyeWidth;
-    int m_iLeftEyeHeight;
-    int m_iRightEyeWidth;
-    int m_iRightEyeHeight;
-    int m_iImgWidth;
-    int m_iImgHeight;
-    size_t m_iCurrentImg;
-    size_t m_iImgCount;
+    int m_iLeftEyeWidth {};
+    int m_iLeftEyeHeight {};
+    int m_iRightEyeWidth {};
+    int m_iRightEyeHeight {};
+    int m_iImgWidth {};
+    int m_iImgHeight {};
+    size_t m_iCurrentImg {};
+    size_t m_iImgCount {};
 
     void AnalyzeCurrentImg();
 

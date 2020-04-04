@@ -49,59 +49,39 @@ class CCameraDlg : public CDialog {
     DECLARE_DYNAMIC(CCameraDlg)
 
 private:
-    CvCapture* m_pCapture;
-    IplImage* m_pCurrentFrame;
-    IplImage* m_pCurrentOrgFrame;
-    CEyeTrackerDlg* m_pEyeTrackerDlg;
-    int m_iWndWidth;
-    int m_iWndHeight;
-    int m_iLeftEyeWndWidth;
-    int m_iLeftEyeWndHeight;
-    int m_iRightEyeWndWidth;
-    int m_iRightEyeWndHeight;
-    BOOL m_bIsMouseControl;
-    BOOL m_bIsTracking;
+    CvCapture* m_pCapture {};
+    IplImage* m_pCurrentFrame {};
+    IplImage* m_pCurrentOrgFrame {};
+    CEyeTrackerDlg* m_pEyeTrackerDlg {};
+    int m_iWndWidth {};
+    int m_iWndHeight {};
+    int m_iLeftEyeWndWidth {};
+    int m_iLeftEyeWndHeight {};
+    int m_iRightEyeWndWidth {};
+    int m_iRightEyeWndHeight {};
+    BOOL m_bIsMouseControl {};
+    BOOL m_bIsTracking {};
     CvPoint m_cCurrentMidPoint;
     CvPoint m_cLastMidPoint;
     CvPoint m_cTemplateMidPoint;
-    int m_iTemplateWidth;
-    int m_iTemplateHeight;
-    int m_iSelectedAlg;
-    int m_iAvgFaceFps;
-    int m_iAvgEyeFps;
-    int m_iAccH;
-    int m_iAccV;
-    int m_iVarrianceBlink;
-    int m_iLastFramesNum;
-    double m_dRatioThreshold;
-    double m_dRatioThreshold2;
-    BOOL m_bSupportClicking;
-    BOOL m_bSupportDoubleClick;
-    DWORD m_iTickCount;
+    int m_iTemplateWidth {};
+    int m_iTemplateHeight {};
+    int m_iSelectedAlg {};
+    int m_iAvgFaceFps {};
+    int m_iAvgEyeFps {};
+    int m_iAccH {};
+    int m_iAccV {};
+    int m_iVarrianceBlink {};
+    int m_iLastFramesNum {};
+    double m_dRatioThreshold {};
+    double m_dRatioThreshold2 {};
+    BOOL m_bSupportClicking {};
+    BOOL m_bSupportDoubleClick {};
+    DWORD m_iTickCount {};
+    bool m_bIsTmpSet;
 
-public:
-    CCameraDlg(CWnd* pParent = NULL);
-    virtual ~CCameraDlg();
-    IplImage* m_pLeftEyeImg;
-    IplImage* m_pRightEyeImg;
-   
-    enum { IDD = IDD_CAMERADLG };
-
-protected:
-    virtual void DoDataExchange(CDataExchange* pDX);
-
-    DECLARE_MESSAGE_MAP()
-public:
-    virtual BOOL OnInitDialog();
-
-protected:
-    virtual void PostNcDestroy();
-
-public:
     afx_msg void OnTimer(UINT_PTR nIDEvent);
-    afx_msg void OnBnClickedButton1();
-
-private:
+ 
     void MoveCursor(int iXOffset, int iYOffset);
     void PressLeftButton();
     void ReleaseLeftButton();
@@ -110,15 +90,24 @@ private:
     void ResetEyeBlinks();
 
 public:
+    CCameraDlg(CWnd* pParent = NULL);
+    virtual ~CCameraDlg();
+    IplImage* m_pLeftEyeImg {};
+    IplImage* m_pRightEyeImg {};
+
+    virtual BOOL OnInitDialog();
+    afx_msg void OnBnClickedBtmp();
+    virtual BOOL PreTranslateMessage(MSG* pMsg);
     afx_msg void OnClickedBtrack();
     afx_msg void OnClickedBmousectrl();
 
-private:
-    bool m_bIsTmpSet;
+    enum { IDD = IDD_CAMERADLG };
 
-public:
-    afx_msg void OnBnClickedBtmp();
-    virtual BOOL PreTranslateMessage(MSG* pMsg);
+protected:
+    virtual void DoDataExchange(CDataExchange* pDX);
+    virtual void PostNcDestroy();
+
+    DECLARE_MESSAGE_MAP()
 };
 
 #endif

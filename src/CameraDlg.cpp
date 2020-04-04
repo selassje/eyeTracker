@@ -28,6 +28,7 @@ SOFTWARE.
 #include "CameraDlg.hpp"
 #include "EyeTrackerDlg.hpp"
 #include "ObjectDetection.hpp"
+#include "Constants.hpp"
 
 #define DISPLAY_TIMER 1
 #define MOUSE_SENSIVITY 20
@@ -167,6 +168,7 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
     cPupilRight.x = -1;
     cPupilRight.y = -1;
 
+
     if (m_pCapture) {
         m_pCurrentFrame = cvCloneImage(cvQueryFrame(m_pCapture));
         BOOL bLeftEyeBlink = FALSE;
@@ -212,10 +214,8 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                 strLog.Format(L"Detected Face (x=%d y=%d width=%d height=%d)", pFace->x, pFace->y, pFace->width, pFace->height);
                 Log(strLog);
 
-                iFaceFrameCount = 0;
-
-                CvRect cEyeLeft = cvRect(0, 0, 0, 0);
-                CvRect cEyeRight = cvRect(0, 0, 0, 0);
+                CvRect cEyeLeft {};
+                CvRect cEyeRight {};
 
                 bool bAvgLeft = TRUE;
                 bool bAvgRight = TRUE;
@@ -266,6 +266,22 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                 iAvgRightEyeWidth = 0;
                 iAvgRightEyeHeight = 0;
 
+
+                auto drawPupils = [](const auto& mainDisplay, 
+                                    const auto& pointOnMainDisplay,
+                                    const auto& eyeDisplay,
+                                    const auto& pointOnEyeDisplay) {
+                    const auto MainRadius = 3;
+                    const auto EyeDisplayRadius = 4;
+                    const auto Thickness = -1;
+                    const auto LineType = 4;
+                    const auto Shift = 0;
+                    const auto color = CV_RGB(250, 250, 210);
+                    cvDrawCircle(mainDisplay, pointOnMainDisplay, MainRadius, color, Thickness, LineType, Shift);
+                    cvDrawCircle(eyeDisplay, pointOnEyeDisplay, EyeDisplayRadius, color, Thickness, LineType, Shift);
+                };
+
+
                 if (bAvgLeft) {
 
                     cvReleaseImage(&m_pLeftEyeImg);
@@ -275,7 +291,7 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                     cvCopy(m_pCurrentFrame, m_pLeftEyeImg, NULL);
                     cvResetImageROI(m_pCurrentFrame);
 
-                    bLeftEyeBlink = CObjectDetection::DetectLeftBlink(m_pLeftEyeImg, m_iLastFramesNum, m_iVarrianceBlink, m_dRatioThreshold);
+                    bLeftEyeBlink = CObjectDetection::DetectLeftBlink(m_pLeftEyeImg, static_cast<size_t>(m_iLastFramesNum), m_iVarrianceBlink, m_dRatioThreshold);
 
                     CvPoint cPupilCenter;
 
@@ -299,8 +315,12 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                     IplImage* pLeftEyeDisplay = cvCreateImage(cvSize(m_iLeftEyeWndWidth, m_iLeftEyeWndHeight), m_pCurrentFrame->depth, m_pCurrentFrame->nChannels);
                     cvResize(m_pLeftEyeImg, pLeftEyeDisplay);
                     if (IsDlgButtonChecked(IDC_CSHOWPUPIL)) {
-                        cvDrawCircle(pLeftEyeDisplay, cvPoint((int)(cPupilCenter.x * dEyeWidthRatio), (int)(cPupilCenter.y * dEyeHeightRatio)), 4, CV_RGB(250, 250, 210), -1, 4, 0);
-                        cvDrawCircle(pDisplay, cvPoint((int)(cPupilLeft.x * dWidthRatio), (int)(cPupilLeft.y * dHeightRatio)), 3, CV_RGB(250, 250, 210), -1, 4, 0);
+
+                        drawPupils(pDisplay, 
+                                   cvPoint((int)(cPupilLeft.x * dWidthRatio), (int)(cPupilLeft.y * dHeightRatio)),
+                                   pLeftEyeDisplay,
+                                   cvPoint((int)(cPupilCenter.x * dEyeWidthRatio), (int)(cPupilCenter.y * dEyeHeightRatio)));
+
                         CString strLog;
                         strLog.Format(L"Detected Left Pupil (x=%d y=%d)", cPupilLeft.x, cPupilLeft.y);
                         Log(strLog);
@@ -328,7 +348,7 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                     strLog.Format(L"Detected Right Eye (x=%d y=%d width=%d height=%d)", cEyeRight.x, cEyeRight.y, cEyeRight.width, cEyeRight.height);
                     Log(strLog);
 
-                    bRightEyeBlink = CObjectDetection::DetectRightBlink(m_pRightEyeImg, m_iLastFramesNum, m_iVarrianceBlink, m_dRatioThreshold2);
+                    bRightEyeBlink = CObjectDetection::DetectRightBlink(m_pRightEyeImg, static_cast<size_t>(m_iLastFramesNum), m_iVarrianceBlink, m_dRatioThreshold2);
 
                     CvPoint cPupilCenter;
 
@@ -353,8 +373,11 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                     double dEyeHeightRatio = ((double)m_iRightEyeWndHeight) / m_pRightEyeImg->height;
 
                     if (IsDlgButtonChecked(IDC_CSHOWPUPIL)) {
-                        cvDrawCircle(pRightEyeDisplay, cvPoint((int)(cPupilCenter.x * dEyeWidthRatio), (int)(cPupilCenter.y * dEyeHeightRatio)), 4, CV_RGB(250, 250, 210), -1, 4, 0);
-                        cvDrawCircle(pDisplay, cvPoint((int)(cPupilRight.x * dWidthRatio), (int)(cPupilRight.y * dHeightRatio)), 3, CV_RGB(250, 250, 210), -1, 4, 0);
+                        drawPupils(pDisplay, 
+                                   cvPoint((int)(cPupilRight.x * dWidthRatio), (int)(cPupilRight.y * dHeightRatio)),
+                                   pRightEyeDisplay,
+                                   cvPoint((int)(cPupilCenter.x * dEyeWidthRatio), (int)(cPupilCenter.y * dEyeHeightRatio)));
+
                         CString strLog;
                         strLog.Format(L"Detected Right Pupil (x=%d y=%d)", cPupilRight.x, cPupilRight.y);
                         Log(strLog);
@@ -405,8 +428,13 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                         cDisplayRight.x = (int)(cPupilRight.x * dWidthRatio);
                         cDisplayRight.y = (int)(cPupilRight.y * dHeightRatio);
 
-                        cvDrawLine(pDisplay, cDisplayRight, cDisplayLeft, CV_RGB(0, 255, 0), 1, 8, 0);
-                        cvDrawCircle(pDisplay, cDisplayMid, 3, CV_RGB(255, 255, 255), -1, 4, 0);
+                        constexpr auto lineThickness = 1;
+                        constexpr auto lineType = 8;
+                        constexpr auto circleThickness = -1;
+                        constexpr auto circleLineType = 4;
+
+                        cvDrawLine(pDisplay, cDisplayRight, cDisplayLeft, CVCOLORS::GREEN, lineThickness, lineType);
+                        cvDrawCircle(pDisplay, cDisplayMid, 3, CVCOLORS::WHITE, circleThickness, circleLineType);
                     }
                     if (!m_bIsTmpSet && IsDlgButtonChecked(IDC_CSHOWTMP))
                         cvRectangle(pDisplay, cvPoint((int)((m_cCurrentMidPoint.x - m_iTemplateWidth / 2) * dWidthRatio), (int)((m_cCurrentMidPoint.y - m_iTemplateHeight / 2) * dHeightRatio)),
@@ -457,18 +485,21 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                         }
                     }
                 }
+
+                auto pressAndReleaseLeftButton = [this]() {
+                    PressLeftButton();
+                    ReleaseLeftButton();
+                };
+
                 if (!isMove && m_bIsMouseControl) {
                     if (bLeftEyeBlink && !bRightEyeBlink && m_bSupportClicking) {
-                        PressLeftButton();
-                        ReleaseLeftButton();
+                        pressAndReleaseLeftButton();
                         Log(L"Detected Left Eye blink");
                         isMove = TRUE;
                     }
                     if (bRightEyeBlink && !bLeftEyeBlink && m_bSupportDoubleClick) {
-                        PressLeftButton();
-                        ReleaseLeftButton();
-                        PressLeftButton();
-                        ReleaseLeftButton();
+                        pressAndReleaseLeftButton();
+                        pressAndReleaseLeftButton();
                         Log(L"Detected Right Eye Blink");
                         isMove = TRUE;
                     }
@@ -667,6 +698,6 @@ BOOL CCameraDlg::PreTranslateMessage(MSG* pMsg)
 
 void CCameraDlg::ResetEyeBlinks()
 {
-    CObjectDetection::DetectLeftBlink(m_pLeftEyeImg, m_iLastFramesNum, m_iVarrianceBlink, m_dRatioThreshold, TRUE);
-    CObjectDetection::DetectRightBlink(m_pLeftEyeImg, m_iLastFramesNum, m_iVarrianceBlink, m_dRatioThreshold, TRUE);
+    CObjectDetection::DetectLeftBlink(m_pLeftEyeImg, static_cast<size_t>(m_iLastFramesNum), m_iVarrianceBlink, m_dRatioThreshold, TRUE);
+    CObjectDetection::DetectRightBlink(m_pLeftEyeImg, static_cast<size_t>(m_iLastFramesNum), m_iVarrianceBlink, m_dRatioThreshold, TRUE);
 }

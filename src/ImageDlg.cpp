@@ -27,6 +27,7 @@ SOFTWARE.
 #include "ImageDlg.hpp"
 #include "EyeTrackerDlg.hpp"
 #include "ObjectDetection.hpp"
+#include "Constants.hpp"
 
 #include "opencv2/highgui/highgui.hpp"
 
@@ -110,8 +111,8 @@ BOOL CImageDlg::OnInitDialog()
         CWnd* pCameraWndParent = GetDlgItem(IDC_IMG);
         RECT cRightEye;
         pCameraWndParent->GetClientRect(&cRightEye);
-        m_iRightEyeWidth = cRightEye.right;
-        m_iRightEyeHeight = cRightEye.bottom;
+        m_iRightEyeWidth =  cRightEye.right - cRightEye.left;
+        m_iRightEyeHeight = cRightEye.bottom - cRightEye.top;
         ::SetParent(hWnd, pCameraWndParent->m_hWnd);
         ::ShowWindow(hParent, SW_HIDE);
     }
@@ -166,10 +167,10 @@ void CImageDlg::OnBnClickedButton1()
 
         CString strImgCount;
         if (m_iImgCount == 0) {
-            strImgCount = L"";
+            strImgCount.Empty();
             SetDlgItemText(IDC_IMGCURRENT, L"");
         } else
-            strImgCount.Format(L"%d", m_iImgCount);
+            strImgCount.Format(L"%Iu", m_iImgCount);
 
         SetDlgItemText(IDC_IMGCOUNT, strImgCount);
         AnalyzeCurrentImg();
@@ -188,7 +189,7 @@ void CImageDlg::AnalyzeCurrentImg()
 
     if (m_iImgCount != 0) {
         CString strImgCurrent;
-        strImgCurrent.Format(L"%d", m_iCurrentImg + 1);
+        strImgCurrent.Format(L"%Iu", m_iCurrentImg + 1);
         SetDlgItemText(IDC_IMGCURRENT, strImgCurrent);
 
         CString fileName = m_lImages[m_iCurrentImg];
@@ -239,14 +240,13 @@ void CImageDlg::AnalyzeCurrentImg()
 
 void CImageDlg::OnBnClickedNext()
 {
-    ++m_iCurrentImg %= m_iImgCount;
+    m_iCurrentImg = (m_iCurrentImg + 1) % m_iImgCount;
     AnalyzeCurrentImg();
 }
 
 void CImageDlg::OnBnClickedPrev()
 {
-    m_iCurrentImg = --m_iCurrentImg < 0 ? m_iImgCount - 1 : m_iCurrentImg;
-
+    m_iCurrentImg =  m_iCurrentImg == 0 ? m_iImgCount - 1 : m_iCurrentImg - 1;
     AnalyzeCurrentImg();
 }
 
@@ -270,6 +270,22 @@ HBRUSH CImageDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 }
 void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRightEye)
 {
+
+    auto drawPoint = [](const auto& image, const auto& point, const auto& color) {
+        const auto Radius = 1;
+        const auto Thickness = -1;
+        const auto LineType = 4;
+        const auto Shift = 0;
+        return cvDrawCircle(image, point, Radius, color, Thickness, LineType, Shift);
+    };
+
+    auto drawLine = [](const auto& image, const auto& point1, const auto& point2, const auto& color) {
+        const auto Thickness = 1;
+        const auto LineType = 4;
+        const auto Shift = 0;
+        return cvDrawLine(image, point1, point2, color, Thickness, LineType, Shift);
+    };
+
     CvRect* pFace = CObjectDetection::DetectFace(pImg);
     if (pFace) {
         CvRect cLeftEye;
@@ -317,7 +333,7 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
             }
 
             if (IsDlgButtonChecked(IDC_CDF)) {
-                cvDrawCircle(*pLeftEye, cvPoint(cPupilCDF.x, cPupilCDF.y), 1, CV_RGB(255, 0, 0), -1, 4, 0);
+                drawPoint(*pLeftEye,cvPoint(cPupilCDF.x, cPupilCDF.y),CVCOLORS::RED);
 #ifdef DEBUG
                 IplImage* pDrawnPupil = cvCreateImage(cvGetSize(*pLeftEye), 8, 1);
                 cvCvtColor(*pLeftEye, pDrawnPupil, CV_BGR2GRAY);
@@ -326,23 +342,23 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
 #endif DEBUG
             }
             if (IsDlgButtonChecked(IDC_EDGE)) {
-                cvDrawCircle(*pLeftEye, cvPoint(cPupilEdge.x, cPupilEdge.y), 1, CV_RGB(0, 0, 255), -1, 4, 0);
+                drawPoint(*pLeftEye, cvPoint(cPupilEdge.x, cPupilEdge.y),CVCOLORS::BLUE);
 #ifdef DEBUG
                 IplImage* pDrawnPupil = cvCreateImage(cvGetSize(*pLeftEye), 8, 1);
                 cvCvtColor(*pLeftEye, pDrawnPupil, CV_BGR2GRAY);
-                cvDrawLine(pDrawnPupil, cvPoint(0, cPupilEdge.y), cvPoint((*pLeftEye)->width, cPupilEdge.y), CV_RGB(255, 0, 0), 1, 4, 0);
-                cvDrawLine(pDrawnPupil, cvPoint(cPupilEdge.x, 0), cvPoint(cPupilEdge.x, (*pLeftEye)->height), CV_RGB(255, 0, 0), 1, 4, 0);
+                drawLine(pDrawnPupil, cvPoint(0, cPupilEdge.y), cvPoint((*pLeftEye)->width, cPupilEdge.y), CVCOLORS::RED);
+                drawLine(pDrawnPupil, cvPoint(cPupilEdge.x, 0), cvPoint(cPupilEdge.x, (*pLeftEye)->height), CVCOLORS::RED);
                 cvSaveImage("right_eye_edge.jpg", pDrawnPupil);
                 cvReleaseImage(&pDrawnPupil);
 #endif DEBUG
             }
             if (IsDlgButtonChecked(IDC_GPF)) {
-                cvDrawCircle(*pLeftEye, cvPoint(cPupilGPF.x, cPupilGPF.y), 1, CV_RGB(0, 255, 0), -1, 4, 0);
+                drawPoint(*pLeftEye, cvPoint(cPupilGPF.x, cPupilGPF.y),CVCOLORS::GREEN);
 #ifdef DEBUG
                 IplImage* pDrawnPupil = cvCreateImage(cvGetSize(*pLeftEye), 8, 1);
                 cvCvtColor(*pLeftEye, pDrawnPupil, CV_BGR2GRAY);
-                cvDrawLine(pDrawnPupil, cvPoint(0, cPupilGPF.y), cvPoint((*pLeftEye)->width, cPupilGPF.y), CV_RGB(255, 0, 0), 1, 4, 0);
-                cvDrawLine(pDrawnPupil, cvPoint(cPupilGPF.x, 0), cvPoint(cPupilGPF.x, (*pLeftEye)->height), CV_RGB(255, 0, 0), 1, 4, 0);
+                drawLine(pDrawnPupil, cvPoint(0, cPupilGPF.y), cvPoint((*pLeftEye)->width, cPupilGPF.y), CVCOLORS::RED);
+                drawLine(pDrawnPupil, cvPoint(cPupilGPF.x, 0), cvPoint(cPupilGPF.x, (*pLeftEye)->height), CVCOLORS::RED);
                 cvSaveImage("left_eye_gpf.jpg", pDrawnPupil);
                 cvReleaseImage(&pDrawnPupil);
 #endif DEBUG
@@ -370,21 +386,21 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
                 cPupilGPF = CObjectDetection::DetectPupilGPF(*pRightEye);
             }
             if (IsDlgButtonChecked(IDC_CDF)) {
-                cvDrawCircle(*pRightEye, cvPoint(cPupilCDF.x, cPupilCDF.y), 1, CV_RGB(255, 0, 0), -1, 4, 0);
+                drawPoint(*pRightEye, cvPoint(cPupilCDF.x, cPupilCDF.y), CVCOLORS::RED);
 #ifdef DEBUG
                 IplImage* pDrawnPupil = cvCreateImage(cvGetSize(*pRightEye), 8, 1);
                 cvCvtColor(*pRightEye, pDrawnPupil, CV_BGR2GRAY);
-                cvDrawLine(pDrawnPupil, cvPoint(0, cPupilCDF.y), cvPoint((*pRightEye)->width, cPupilCDF.y), CV_RGB(255, 0, 0), 1, 4, 0);
-                cvDrawLine(pDrawnPupil, cvPoint(cPupilCDF.x, 0), cvPoint(cPupilCDF.x, (*pRightEye)->height), CV_RGB(255, 0, 0), 1, 4, 0);
+                drawLine(pDrawnPupil, cvPoint(0, cPupilCDF.y), cvPoint((*pRightEye)->width, cPupilCDF.y), CVCOLORS::RED);
+                drawLine(pDrawnPupil, cvPoint(cPupilCDF.x, 0), cvPoint(cPupilCDF.x, (*pRightEye)->height), CVCOLORS::RED);
                 cvSaveImage("right_eye_cdf.jpg", pDrawnPupil);
                 cvReleaseImage(&pDrawnPupil);
 #endif DEBUG
             }
             if (IsDlgButtonChecked(IDC_EDGE)) {
-                cvDrawCircle(*pRightEye, cvPoint(cPupilEdge.x, cPupilEdge.y), 1, CV_RGB(0, 0, 255), -1, 4, 0);
+                drawPoint(*pRightEye, cvPoint(cPupilEdge.x, cPupilEdge.y),CVCOLORS::BLUE);
             }
             if (IsDlgButtonChecked(IDC_GPF)) {
-                cvDrawCircle(*pRightEye, cvPoint(cPupilGPF.x, cPupilGPF.y), 1, CV_RGB(0, 255, 0), -1, 4, 0);
+                drawPoint(*pRightEye, cvPoint(cPupilGPF.x, cPupilGPF.y), CVCOLORS::GREEN);
             }
         }
 
@@ -417,14 +433,14 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
         }
 
         if (IsDlgButtonChecked(IDC_CDF)) {
-            cvDrawCircle(*pLeftEye, cvPoint(cPupilCDF.x, cPupilCDF.y), 1, CV_RGB(255, 0, 0), -1, 4, 0);
+            drawPoint(*pLeftEye, cvPoint(cPupilCDF.x, cPupilCDF.y), CVCOLORS::RED);
         }
 
         if (IsDlgButtonChecked(IDC_EDGE)) {
-            cvDrawCircle(*pLeftEye, cvPoint(cPupilEdge.x, cPupilEdge.y), 1, CV_RGB(0, 0, 255), -1, 4, 0);
+            drawPoint(*pLeftEye, cvPoint(cPupilEdge.x, cPupilEdge.y), CVCOLORS::BLUE);
         }
         if (IsDlgButtonChecked(IDC_GPF)) {
-            cvDrawCircle(*pLeftEye, cvPoint(cPupilGPF.x, cPupilGPF.y), 1, CV_RGB(0, 255, 0), -1, 4, 0);
+            drawPoint(*pLeftEye, cvPoint(cPupilGPF.x, cPupilGPF.y), CVCOLORS::GREEN);
         }
     }
 }

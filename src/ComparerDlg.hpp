@@ -36,47 +36,39 @@ class CComparerDlg : public CDialogEx {
     DECLARE_DYNAMIC(CComparerDlg)
 
 private:
-    int m_iImgCount;
-    int m_iFaceCount;
-    int m_iEyesCount;
-    int m_iPointsNumber;
-    double m_dErrorThreshold;
+    int m_iImgCount {};
+    int m_iFaceCount {};
+    int m_iEyesCount {};
+    int m_iPointsNumber {};
+    double m_dErrorThreshold {};
     std::vector<CString> m_lImages;
     std::map<double, double> m_CDFPoints;
     std::map<double, double> m_EdgePoints;
     std::map<double, double> m_GPFPoints;
 
+    void Plot(void);
+    void SetupGraph(void);
+
 public:
     CComparerDlg(CWnd* pParent = NULL);
     virtual ~CComparerDlg();
+    enum { IDD = IDD_COMPARER }; 
+    CGraph m_cGraph;
+    CProgressCtrl m_cProgCtrl;
 
-    enum { IDD = IDD_COMPARER };
+    virtual BOOL OnInitDialog();
+    afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
+    afx_msg void OnBnClickedButton1();
+    afx_msg void OnBnClickedButton2();
+    afx_msg void OnBnClickedCdfg();
+    afx_msg void OnBnClickedEdgeg();
+    afx_msg void OnBnClickedGpfg();
+    afx_msg void OnBnClickedExport();
 
 protected:
     virtual void DoDataExchange(CDataExchange* pDX);
 
     DECLARE_MESSAGE_MAP()
-public:
-    afx_msg void OnBnClickedButton1();
-    afx_msg void OnBnClickedButton2();
-    CGraph m_cGraph;
-    virtual BOOL OnInitDialog();
-    afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
-
-private:
-    void Plot(void);
-
-public:
-    afx_msg void OnBnClickedCdfg();
-    afx_msg void OnBnClickedEdgeg();
-    afx_msg void OnBnClickedGpfg();
-
-private:
-    void SetupGraph(void);
-
-public:
-    CProgressCtrl m_cProgCtrl;
-    afx_msg void OnBnClickedExport();
 };
 
 class SBioIDEyeCenters : public CObject {

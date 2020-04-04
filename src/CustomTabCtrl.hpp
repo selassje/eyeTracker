@@ -31,9 +31,9 @@ class CCustomTabCtrl : public CTabCtrl {
 
 private:
     int m_DialogID[5];
-    int m_nPageCount;
+    int m_nPageCount {};
     CDialog* m_Dialog[5];
-    int m_iCurrentPage;
+    int m_iCurrentPage {};
 
 public:
     CCustomTabCtrl();

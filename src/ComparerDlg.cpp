@@ -90,9 +90,9 @@ void CComparerDlg::OnBnClickedButton1()
 
         CString strImgCount;
         if (iImgCount == 0) {
-            strImgCount = L"";
+            strImgCount.Empty();
         } else {
-            strImgCount.Format(L"%d", iImgCount);
+            strImgCount.Format(L"%Iu", iImgCount);
         }
 
         SetDlgItemText(IDC_IMGCOUNT2, strImgCount);
@@ -129,8 +129,8 @@ void CComparerDlg::OnBnClickedButton2()
 
     m_cProgCtrl.SetRange(0, static_cast<short>(iImageCount) - 1);
     CWaitCursor cWait;
-    for (unsigned int i = 0; i < m_lImages.size(); ++i) {
-        CString sImgPath = m_lImages[i];
+    for (unsigned i = 0; i < static_cast<unsigned>(m_lImages.size()); ++i) {
+        CString sImgPath = m_lImages[static_cast<size_t>(i)];
 
         int iExtPoint = sImgPath.ReverseFind('.') + 1;
         CString sEyePosPath = sImgPath.Mid(0, iExtPoint) + L"pts";
@@ -237,31 +237,30 @@ void CComparerDlg::OnBnClickedButton2()
 
                             if (dErrorCDF < dMaxError) {
                                 if (m_CDFPoints.find(dMaxError) == m_CDFPoints.end())
-                                    m_CDFPoints.insert(std::make_pair(dMaxError, 1.));
+                                    m_CDFPoints.emplace(dMaxError, 1.);
                                 else
                                     m_CDFPoints[dMaxError] += 1;
                             }
 
                             else if (m_CDFPoints.find(dMaxError) == m_CDFPoints.end())
-                                m_CDFPoints.insert(std::make_pair(dMaxError, 0));
+                                m_CDFPoints.emplace(dMaxError, 0);
 
                             if (dErrorEdge < dMaxError) {
                                 if (m_EdgePoints.find(dMaxError) == m_EdgePoints.end())
-                                    m_EdgePoints.insert(std::make_pair(dMaxError, 1.));
+                                    m_EdgePoints.emplace(dMaxError, 1.);
                                 else
                                     m_EdgePoints[dMaxError] += 1;
                             } else if (m_EdgePoints.find(dMaxError) == m_EdgePoints.end())
-                                m_EdgePoints.insert(std::make_pair(dMaxError, 0));
+                                m_EdgePoints.emplace(dMaxError, 0);
 
                             if (dErrorGPF < dMaxError) {
                                 if (m_GPFPoints.find(dMaxError) == m_GPFPoints.end())
-                                    m_GPFPoints.insert(std::make_pair(dMaxError, 1.));
+                                    m_GPFPoints.emplace(dMaxError, 1.);
                                 else
                                     m_GPFPoints[dMaxError] += 1;
                             } else if (m_GPFPoints.find(dMaxError) == m_GPFPoints.end())
-                                m_GPFPoints.insert(std::make_pair(dMaxError, 0));
+                                m_GPFPoints.emplace(dMaxError, 0);
 
-                            double nextError = dMaxError + dInterval;
                             if (dMaxError + dInterval > m_dErrorThreshold && dMaxError != m_dErrorThreshold) {
                                 dMaxError = m_dErrorThreshold - dInterval;
                             }
@@ -274,7 +273,7 @@ void CComparerDlg::OnBnClickedButton2()
             }
         }
 
-        m_cProgCtrl.SetPos(i);
+        m_cProgCtrl.SetPos(static_cast<int>(i));
         UpdateWindow();
     }
     cWait.Restore();
@@ -288,9 +287,9 @@ void CComparerDlg::OnBnClickedButton2()
         it->second *= 100. / m_iEyesCount;
     }
 
-    SetDlgItemInt(IDC_IMGD, m_iImgCount);
-    SetDlgItemInt(IDC_FACED, m_iFaceCount);
-    SetDlgItemInt(IDC_EYESD, m_iEyesCount);
+    SetDlgItemInt(IDC_IMGD, static_cast<int>(m_iImgCount));
+    SetDlgItemInt(IDC_FACED, static_cast<int>(m_iFaceCount));
+    SetDlgItemInt(IDC_EYESD, static_cast<int>(m_iEyesCount));
 
     Plot();
 }
@@ -313,7 +312,6 @@ void SBioIDEyeCenters::Serialize(CArchive& ar)
         int iLineEnd = sLine.Find('\n', iLineStart + 1);
         int iSpace = sLine.Find(' ', iLineStart + 1);
 
-        CStringA test = sLine.Mid(iLineStart, iSpace - iLineStart);
         cRightEye.x = atoi(sLine.Mid(iLineStart, iSpace - iLineStart));
         cRightEye.y = atoi(sLine.Mid(iSpace, iLineEnd - iLineStart));
 
@@ -338,7 +336,7 @@ BOOL CComparerDlg::OnInitDialog()
     m_iPointsNumber = DEF_POINTNUMBER;
 
     SetDlgItemDouble(this, IDC_THRESH, m_dErrorThreshold);
-    SetDlgItemInt(IDC_EPOINTNUM, m_iPointsNumber);
+    SetDlgItemInt(IDC_EPOINTNUM, static_cast<int>(m_iPointsNumber));
 
     m_iImgCount = 0;
     m_iFaceCount = 0;
@@ -457,7 +455,6 @@ void CComparerDlg::OnBnClickedExport()
     CFileDialog fileDlg(FALSE, NULL, NULL, 4 | 2, L"Text Files(*.txt)|*.txt|All(*.*)|*.*||", this);
     if (fileDlg.DoModal() == IDOK) {
         CStdioFile exportFile;
-        CString strPath = fileDlg.GetPathName();
         exportFile.Open(fileDlg.GetPathName(), CFile::modeWrite | CFile::modeCreate);
         if (iPoints) {
             auto it_cdf = m_CDFPoints.begin();

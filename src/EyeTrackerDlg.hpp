@@ -36,7 +36,6 @@ SOFTWARE.
 
 #define WM_NOTIFYICON (WM_USER + 1)
 
-
 class CEyeTrackerDlg : public CDialog {
 
 public:
@@ -44,8 +43,19 @@ public:
 
     enum { IDD = IDD_EYETRACKER_DIALOG };
 
-protected:
-    virtual void DoDataExchange(CDataExchange* pDX); 
+ 
+    afx_msg void OnDestroy();
+
+    CCustomTabCtrl m_cTabCtrl {};
+    CLogDlg* m_pLogDlg {};
+    CSettingDlg* m_pSettingDlg {};
+    CCameraDlg* m_pCameraDlg {};
+    CImageDlg* m_pImageDlg {};
+
+    void Log(CString strMessage);
+    afx_msg void OnMenuExit();
+    afx_msg void OnMenuAbout();
+    afx_msg LRESULT OnTrayNotify(WPARAM, LPARAM);
 
 protected:
     HICON m_hIcon;
@@ -54,24 +64,13 @@ protected:
     afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
     afx_msg void OnPaint();
     afx_msg HCURSOR OnQueryDragIcon();
+    virtual void DoDataExchange(CDataExchange* pDX); 
     DECLARE_MESSAGE_MAP()
-public:
-    CCustomTabCtrl m_cTabCtrl;
-    CLogDlg* m_pLogDlg;
-    CSettingDlg* m_pSettingDlg;
-    CCameraDlg* m_pCameraDlg;
-    CImageDlg* m_pImageDlg;
-   
-    void Log(CString strMessage);
-    afx_msg void OnMenuExit();
-    afx_msg void OnMenuAbout();
-    afx_msg LRESULT OnTrayNotify(WPARAM, LPARAM);
 
 private:
-    CMenu m_cTrayMenu;
-    NOTIFYICONDATA m_cTnd;
+    CMenu m_cTrayMenu {};
+    NOTIFYICONDATA m_cTnd {};
 
+    enum { CAMERA_TAB = 0, SETTINGS_TAB, LOGS_TAB, IMAGE_TAB, COMPARER_TAB};
 
-public:
-    afx_msg void OnDestroy();
 };
