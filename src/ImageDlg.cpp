@@ -22,14 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#include "stdafx.h"
-#include "EyeTracker.hpp"
+
 #include "ImageDlg.hpp"
 #include "Constants.hpp"
 #include "EyeTrackerDlg.hpp"
 #include "ObjectDetection.hpp"
-
-
 #include "opencv2/highgui/highgui.hpp"
 
 #define EYEDISPLAY_TIMER 2

@@ -26,6 +26,8 @@ SOFTWARE.
 #ifndef PICTURE_HPP
 #define PICTURE_HPP
 
+#include "stdafx.h"
+
 class CPicture : public COleDispatchDriver {
 public:
     enum {

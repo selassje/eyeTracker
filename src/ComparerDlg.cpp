@@ -22,11 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#include "stdafx.h"
-#include "EyeTracker.hpp"
 #include "ComparerDlg.hpp"
+#include "EyeTracker.hpp"
 #include "ObjectDetection.hpp"
-#include "afxdialogex.h"
 #include "opencv2/imgcodecs/imgcodecs_c.h"
 
 

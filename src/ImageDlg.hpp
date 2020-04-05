@@ -24,7 +24,8 @@ SOFTWARE.*/
 #ifndef IMAGDLG_HPP
 #define IMAGDLG_HPP
 
-#include "afxwin.h"
+#include "stdafx.h"
+#include "resource.h"
 #include <vector>
 
 class CImageDlg : public CDialog {

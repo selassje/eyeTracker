@@ -26,6 +26,9 @@ SOFTWARE.
 #ifndef LOGDLG_HPP
 #define LOGDLG_HPP
 
+#include "stdafx.h"
+#include "EyeTracker.hpp"
+
 class CLogDlg : public CDialog {
     DECLARE_DYNAMIC(CLogDlg)
 

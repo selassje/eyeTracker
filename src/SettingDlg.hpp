@@ -26,7 +26,8 @@ SOFTWARE.
 #ifndef SETTINGDLG_HPP
 #define SETTINGDLG_HPP
 
-#include "afxwin.h"
+#include "EyeTracker.hpp"
+#include "stdafx.h"
 
 class CSettingDlg : public CDialog {
     DECLARE_DYNAMIC(CSettingDlg)

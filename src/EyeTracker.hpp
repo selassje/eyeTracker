@@ -26,11 +26,12 @@ SOFTWARE.
 #ifndef EYETRACKER_HPP
 #define EYETRACKER_HPP
 
+#include "stdafx.h"
+#include "resource.h"
+
 #ifndef __AFXWIN_H__
 #error "include 'stdafx.h' before including this file for PCH"
 #endif
-
-#include "resource.h"
 
 class CEyeTrackerApp : public CWinApp {
 public:

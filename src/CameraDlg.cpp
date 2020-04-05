@@ -22,14 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#include "stdafx.h"
-#include "EyeTracker.hpp"
 #include "CameraDlg.hpp"
-#include "Constants.hpp"
+#include "EyeTracker.hpp"
 
+#include "Constants.hpp"
 #include "EyeTrackerDlg.hpp"
 #include "ObjectDetection.hpp"
-
+#include <opencv2/highgui/highgui_c.h>
+#include <opencv2/videoio/videoio_c.h>
 
 #define DISPLAY_TIMER 1
 #define MOUSE_SENSIVITY 20

@@ -26,9 +26,9 @@ SOFTWARE.
 #ifndef COMPRARERDLG_HPP
 #define COMPRARERDLG_HPP
 
-#include "Graph.hpp"
-#include "afxcmn.h"
+#include "resource.h"
 #include "stdafx.h"
+#include "Graph.hpp"
 #include <map>
 #include <vector>
 
@@ -52,7 +52,7 @@ private:
 public:
     CComparerDlg(CWnd* pParent = NULL);
     virtual ~CComparerDlg();
-    enum { IDD = IDD_COMPARER }; 
+    enum { IDD = IDD_COMPARER };
     CGraph m_cGraph;
     CProgressCtrl m_cProgCtrl;
 

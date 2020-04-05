@@ -26,6 +26,8 @@ SOFTWARE.
 #ifndef FONT_HPP
 #define FONT_HPP
 
+#include "stdafx.h"
+
 class COleFont : public COleDispatchDriver {
 public:
     struct ID {

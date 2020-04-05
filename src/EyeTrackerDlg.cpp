@@ -23,8 +23,6 @@ SOFTWARE.
 
 */
 
-#include "stdafx.h"
-#include "EyeTracker.hpp"
 #include "EyeTrackerDlg.hpp"
 
 class CAboutDlg : public CDialog {

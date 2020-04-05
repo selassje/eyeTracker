@@ -26,6 +26,8 @@ SOFTWARE.
 #ifndef CUSTOMTABDLG_HPP
 #define CUSTOMTABDLG_HPP
 
+#include "stdafx.h"
+
 class CCustomTabCtrl : public CTabCtrl {
     DECLARE_DYNAMIC(CCustomTabCtrl)
 

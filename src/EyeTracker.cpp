@@ -23,15 +23,9 @@ SOFTWARE.
 
 */
 
-#include "stdafx.h"
 #include "EyeTracker.hpp"
 #include "EyeTrackerDlg.hpp"
 #include "ObjectDetection.hpp"
-
-
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
 
 BEGIN_MESSAGE_MAP(CEyeTrackerApp, CWinApp)
 ON_COMMAND(ID_HELP, &CWinApp::OnHelp)
@@ -45,7 +39,6 @@ CEyeTrackerApp theApp;
 
 BOOL CEyeTrackerApp::InitInstance()
 {
-
     CObjectDetection::Init();
 
     INITCOMMONCONTROLSEX InitCtrls;

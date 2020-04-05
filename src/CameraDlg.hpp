@@ -26,13 +26,9 @@ SOFTWARE.
 #ifndef CAMERADLG_HPP
 #define CAMERADLG_HPP
 
-#include "afxcmn.h"
-#include <opencv2/highgui/highgui_c.h>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/imgproc/imgproc_c.h>
-#include <opencv2/videoio/videoio_c.h>
-#include "afxwin.h"
 #include "resource.h"
+#include "stdafx.h"
+#include <opencv2/videoio/videoio_c.h>
 
 #define DISPLAY_WINDOW "Camera"
 #define EYE_DEBUG_WINDOW "Eye"
@@ -43,7 +39,6 @@ SOFTWARE.
 #define EYER_WINDOW "Right2"
 
 class CEyeTrackerDlg;
-
 
 class CCameraDlg : public CDialog {
     DECLARE_DYNAMIC(CCameraDlg)
@@ -81,7 +76,7 @@ private:
     bool m_bIsTmpSet;
 
     afx_msg void OnTimer(UINT_PTR nIDEvent);
- 
+
     void MoveCursor(int iXOffset, int iYOffset);
     void PressLeftButton();
     void ReleaseLeftButton();

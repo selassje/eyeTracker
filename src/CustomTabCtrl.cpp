@@ -23,16 +23,9 @@ SOFTWARE.
 
 */
 
-#include "stdafx.h"
-#include "EyeTracker.hpp"
 #include "CustomTabCtrl.hpp"
-#include "CameraDlg.hpp"
 #include "ComparerDlg.hpp"
 #include "EyeTrackerDlg.hpp"
-#include "ImageDlg.hpp"
-#include "LogDlg.hpp"
-#include "SettingDlg.hpp"
-
 
 IMPLEMENT_DYNAMIC(CCustomTabCtrl, CTabCtrl)
 

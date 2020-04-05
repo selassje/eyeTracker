@@ -27,12 +27,8 @@ SOFTWARE.
 #define OBJDETECTION_HPP
 
 #include "opencv2/objdetect.hpp"
-#include <opencv2/highgui/highgui_c.h>
-#include <opencv2/videoio/videoio_c.h>
-
-
+#include "stdafx.h"
 #include <optional>
-#include <queue>
 
 class CObjectDetection {
 public:

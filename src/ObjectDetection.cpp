@@ -23,17 +23,14 @@ SOFTWARE.
 
 */
 
-#include "StdAfx.h"
-#include "EyeTracker.hpp"
 #include "ObjectDetection.hpp"
-#include "CameraDlg.hpp"
 #include <deque>
 #include <iostream>
 #include <map>
-#include <utility>
-
+#include <opencv2/highgui/highgui_c.h>
 #include <opencv2/imgcodecs.hpp>
-#include <opencv2/objdetect.hpp>
+#include <opencv2/imgproc.hpp>
+#include <queue>
 
 using namespace cv;
 

@@ -94,8 +94,6 @@ public:
     } TrackModeState;
 
 public:
-
-
     void SetRange(double xmin, double xmax, double ymin, double ymax)
     {
         static BYTE parms[] = VTS_R8 VTS_R8 VTS_R8 VTS_R8;

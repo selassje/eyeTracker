@@ -32,7 +32,6 @@ SOFTWARE.
 #include "ImageDlg.hpp"
 #include "LogDlg.hpp"
 #include "SettingDlg.hpp"
-#include "afxcmn.h"
 
 #define WM_NOTIFYICON (WM_USER + 1)
 
@@ -43,7 +42,6 @@ public:
 
     enum { IDD = IDD_EYETRACKER_DIALOG };
 
- 
     afx_msg void OnDestroy();
 
     CCustomTabCtrl m_cTabCtrl {};
@@ -64,13 +62,16 @@ protected:
     afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
     afx_msg void OnPaint();
     afx_msg HCURSOR OnQueryDragIcon();
-    virtual void DoDataExchange(CDataExchange* pDX); 
+    virtual void DoDataExchange(CDataExchange* pDX);
     DECLARE_MESSAGE_MAP()
 
 private:
     CMenu m_cTrayMenu {};
     NOTIFYICONDATA m_cTnd {};
 
-    enum { CAMERA_TAB = 0, SETTINGS_TAB, LOGS_TAB, IMAGE_TAB, COMPARER_TAB};
-
+    enum { CAMERA_TAB = 0,
+        SETTINGS_TAB,
+        LOGS_TAB,
+        IMAGE_TAB,
+        COMPARER_TAB };
 };
