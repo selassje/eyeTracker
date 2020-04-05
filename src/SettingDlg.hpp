@@ -38,39 +38,35 @@ public:
 
     enum { IDD = IDD_SETTINGDLG };
 
+    virtual BOOL OnInitDialog();
+    int m_iSelectedCamera {};
+    int m_iSelectedAlg {};
+    int m_iTmpWidth {};
+    int m_iTmpHeight {};
+    int m_iFrameWidth {};
+    int m_iFrameHeight {};
+    int m_iAvgFaceFps {};
+    int m_iAvgEyeFps {};
+    int m_iAccH {};
+    int m_iAccV {};
+    BOOL m_bSupportClicking {};
+    BOOL m_bSupportDoubleClick {};
+    double m_fVarrianceRatio {};
+    double m_fVarrianceRatio2 {};
+    int m_iThresholdClick {};
+    int m_iFrameNumClick {};
+    afx_msg void OnCbnDropdownCombodevice();
+    void Save();
+
 protected:
     virtual void DoDataExchange(CDataExchange* pDX);
 
     DECLARE_MESSAGE_MAP()
+
 private:
     CComboBox m_cDeviceCombo;
     void UpdateDeviceList(void);
-
-public:
-    virtual BOOL OnInitDialog();
-    int m_iSelectedCamera;
-    int m_iSelectedAlg;
-    int m_iTmpWidth;
-    int m_iTmpHeight;
-    int m_iFrameWidth;
-    int m_iFrameHeight;
-    int m_iAvgFaceFps;
-    int m_iAvgEyeFps;
-    int m_iAccH;
-    int m_iAccV;
-    BOOL m_bSupportClicking;
-    BOOL m_bSupportDoubleClick;
-    double m_fVarrianceRatio;
-    double m_fVarrianceRatio2;
-    int m_iThresholdClick;
-    int m_iFrameNumClick;
-
-public:
-    afx_msg void OnCbnDropdownCombodevice();
-    void Save();
-
-private:
-    CComboBox m_cAlgList;
+    CComboBox m_cAlgList {};
 };
 
 #endif

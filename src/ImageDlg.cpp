@@ -337,7 +337,7 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
                 cvCvtColor(*pLeftEye, pDrawnPupil, CV_BGR2GRAY);
                 cvSaveImage("left_eye_cdf.jpg", pDrawnPupil);
                 cvReleaseImage(&pDrawnPupil);
-#endif DEBUG
+#endif
             }
             if (IsDlgButtonChecked(IDC_EDGE)) {
                 drawPoint(*pLeftEye, cvPoint(cPupilEdge.x, cPupilEdge.y), CVCOLORS::BLUE);
@@ -348,7 +348,7 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
                 drawLine(pDrawnPupil, cvPoint(cPupilEdge.x, 0), cvPoint(cPupilEdge.x, (*pLeftEye)->height), CVCOLORS::RED);
                 cvSaveImage("right_eye_edge.jpg", pDrawnPupil);
                 cvReleaseImage(&pDrawnPupil);
-#endif DEBUG
+#endif
             }
             if (IsDlgButtonChecked(IDC_GPF)) {
                 drawPoint(*pLeftEye, cvPoint(cPupilGPF.x, cPupilGPF.y), CVCOLORS::GREEN);
@@ -359,7 +359,7 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
                 drawLine(pDrawnPupil, cvPoint(cPupilGPF.x, 0), cvPoint(cPupilGPF.x, (*pLeftEye)->height), CVCOLORS::RED);
                 cvSaveImage("left_eye_gpf.jpg", pDrawnPupil);
                 cvReleaseImage(&pDrawnPupil);
-#endif DEBUG
+#endif
             }
         }
 
@@ -392,7 +392,7 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
                 drawLine(pDrawnPupil, cvPoint(cPupilCDF.x, 0), cvPoint(cPupilCDF.x, (*pRightEye)->height), CVCOLORS::RED);
                 cvSaveImage("right_eye_cdf.jpg", pDrawnPupil);
                 cvReleaseImage(&pDrawnPupil);
-#endif DEBUG
+#endif
             }
             if (IsDlgButtonChecked(IDC_EDGE)) {
                 drawPoint(*pRightEye, cvPoint(cPupilEdge.x, cPupilEdge.y), CVCOLORS::BLUE);
@@ -408,7 +408,7 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
         cvRectangle(pFaceDrawnImg, cvPoint(pFace->x, pFace->y), cvPoint(pFace->x + pFace->width, pFace->y + pFace->height), CV_RGB(0, 0, 0), 1, 0, 0);
         cvSaveImage("face.jpg", pFaceDrawnImg);
         cvReleaseImage(&pFaceDrawnImg);
-#endif DEBUG
+#endif
     } else {
         *pLeftEye = cvCreateImage(cvGetSize(pImg), pImg->depth, pImg->nChannels);
         cvSetImageROI(pImg, cvRect(0, 0, pImg->width, pImg->height));
