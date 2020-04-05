@@ -26,29 +26,31 @@ SOFTWARE.
 #include "stdafx.h"
 #include "EyeTracker.hpp"
 #include "EyeTrackerDlg.hpp"
+#include "ObjectDetection.hpp"
+
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
 BEGIN_MESSAGE_MAP(CEyeTrackerApp, CWinApp)
-    ON_COMMAND(ID_HELP, &CWinApp::OnHelp)
+ON_COMMAND(ID_HELP, &CWinApp::OnHelp)
 END_MESSAGE_MAP()
-
 
 CEyeTrackerApp::CEyeTrackerApp()
 {
-   
 }
-
 
 CEyeTrackerApp theApp;
 
 BOOL CEyeTrackerApp::InitInstance()
 {
+
+    CObjectDetection::Init();
+
     INITCOMMONCONTROLSEX InitCtrls;
     InitCtrls.dwSize = sizeof(InitCtrls);
-  
+
     InitCtrls.dwICC = ICC_WIN95_CLASSES;
     InitCommonControlsEx(&InitCtrls);
 
@@ -60,20 +62,15 @@ BOOL CEyeTrackerApp::InitInstance()
 
     CEyeTrackerDlg dlg;
     m_pMainWnd = &dlg;
-    typedef HRESULT(STDAPICALLTYPE* FuncDllRegisterServer)();
+    typedef HRESULT(STDAPICALLTYPE * FuncDllRegisterServer)();
 
     INT_PTR nResponse = dlg.DoModal();
-    if (nResponse == IDOK)
-    {
-      
-    }
-    else if (nResponse == IDCANCEL)
-    {
-       
+    if (nResponse == IDOK) {
+
+    } else if (nResponse == IDCANCEL) {
     }
     return FALSE;
 }
-
 
 extern CEyeTrackerDlg* EyeTrackerDlg;
 

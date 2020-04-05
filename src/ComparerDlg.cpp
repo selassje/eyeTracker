@@ -29,6 +29,7 @@ SOFTWARE.
 #include "afxdialogex.h"
 #include "opencv2/imgcodecs/imgcodecs_c.h"
 
+
 #define DEF_MAXTHRESHOLD 0.25
 #define DEF_POINTNUMBER 100
 
@@ -149,7 +150,7 @@ void CComparerDlg::OnBnClickedButton2()
             if (pImage) {
                 ++m_iImgCount;
 
-                CvRect* pFace = CObjectDetection::DetectFace(pImage);
+                auto pFace = CObjectDetection::DetectFace(pImage);
                 if (pFace) {
                     ++m_iFaceCount;
 
@@ -180,7 +181,7 @@ void CComparerDlg::OnBnClickedButton2()
                     cRightPupilGPF.x = -1;
                     cRightPupilGPF.y = -1;
 
-                    CObjectDetection::DetectEyes(pImage, pFace, &cLeftEye, &cRightEye);
+                    CObjectDetection::DetectEyes(pImage, *pFace, &cLeftEye, &cRightEye);
 
                     if (cLeftEye.x != -1) {
                         IplImage* pLeftEyeImg = cvCreateImage(cvSize(cLeftEye.width, cLeftEye.height), pImage->depth, pImage->nChannels);
@@ -233,7 +234,7 @@ void CComparerDlg::OnBnClickedButton2()
                         double dErrorCDF = cBioIDPos.Error(cLeftPupilCDF, cRightPupilCDF);
                         double dErrorEdge = cBioIDPos.Error(cLeftPupilEdge, cRightPupilEdge);
                         double dErrorGPF = cBioIDPos.Error(cLeftPupilGPF, cRightPupilGPF);
-                        for (double dMaxError = 0; dMaxError <= m_dErrorThreshold; dMaxError += dInterval) {
+                        for (double dMaxError = 0; dMaxError <= m_dErrorThreshold; dMaxError += dInterval) { //-V1034
 
                             if (dErrorCDF < dMaxError) {
                                 if (m_CDFPoints.find(dMaxError) == m_CDFPoints.end())

@@ -29,24 +29,27 @@ SOFTWARE.
 #include "opencv2/objdetect.hpp"
 #include <opencv2/highgui/highgui_c.h>
 #include <opencv2/videoio/videoio_c.h>
+
+
+#include <optional>
 #include <queue>
 
 class CObjectDetection {
 public:
-    static CvRect* DetectFace(IplImage* img);
-    static void DetectEyes(IplImage* img, CvRect* pFace, CvRect* pLeftEye, CvRect* pRightEye);
+    static std::optional<cv::Rect> DetectFace(IplImage* img);
+    static void DetectEyes(IplImage* img, const cv::Rect& face, CvRect* pLeftEye, CvRect* pRightEye);
     static CvPoint DetectPupilCDF(IplImage* pEyeImg);
     static CvPoint DetectPupilGPF(IplImage* pEyeImg);
     static CvPoint DetectPupilEdge(IplImage* pEyeImg);
     static BOOL DetectLeftBlink(IplImage* pEyeImg, size_t iLastFramesNumber, int iVarrianceThreshold, double dRatioThreshold, BOOL bReset = FALSE);
     static BOOL DetectRightBlink(IplImage* pEyeImg, size_t iLastFramesNumber, int iVarrianceThreshold, double dRatioThreshold, BOOL bReset = FALSE);
     static void Clear();
+    static void Init();
 
 private:
     static double CFDThreshold(IplImage* pEyeImg, IplImage* pEyeImgOut, double fTreshold);
-    static CvHaarClassifierCascade* m_pFacesCascade;
-    static CvHaarClassifierCascade* m_pEyesCascade;
-    static CvHaarClassifierCascade* m_pEyesSmallCascade;
+    inline static cv::CascadeClassifier m_pFacesCascade {};
+    inline static cv::CascadeClassifier m_pEyesCascade {};
     static CvMemStorage* m_pStorage;
 
     static BOOL DetectBlink(IplImage* pEyeImg, size_t iLastFramesNumber,

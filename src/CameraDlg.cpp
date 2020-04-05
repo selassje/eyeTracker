@@ -22,13 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-
 #include "stdafx.h"
 #include "EyeTracker.hpp"
 #include "CameraDlg.hpp"
+#include "Constants.hpp"
+
 #include "EyeTrackerDlg.hpp"
 #include "ObjectDetection.hpp"
-#include "Constants.hpp"
+
 
 #define DISPLAY_TIMER 1
 #define MOUSE_SENSIVITY 20
@@ -168,13 +169,12 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
     cPupilRight.x = -1;
     cPupilRight.y = -1;
 
-
     if (m_pCapture) {
         m_pCurrentFrame = cvCloneImage(cvQueryFrame(m_pCapture));
         BOOL bLeftEyeBlink = FALSE;
         BOOL bRightEyeBlink = FALSE;
         if (m_pCurrentFrame) {
-            CvRect* pFace = CObjectDetection::DetectFace(m_pCurrentFrame);
+            auto pFace = CObjectDetection::DetectFace(m_pCurrentFrame);
             double dWidthRatio = ((double)m_iWndWidth) / m_pCurrentFrame->width;
             double dHeightRatio = ((double)m_iWndHeight) / m_pCurrentFrame->height;
             auto pDisplay = cvCreateImage(cvSize(m_iWndWidth, m_iWndHeight),
@@ -225,7 +225,7 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
 
                         IplImage* pCurrentFrame = cvCloneImage(cvQueryFrame(m_pCapture));
 
-                        CObjectDetection::DetectEyes(pCurrentFrame, pFace, &cEyeLeft, &cEyeRight);
+                        CObjectDetection::DetectEyes(pCurrentFrame, *pFace, &cEyeLeft, &cEyeRight);
 
                         cvReleaseImage(&pCurrentFrame);
 
@@ -266,11 +266,10 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                 iAvgRightEyeWidth = 0;
                 iAvgRightEyeHeight = 0;
 
-
-                auto drawPupils = [](const auto& mainDisplay, 
-                                    const auto& pointOnMainDisplay,
-                                    const auto& eyeDisplay,
-                                    const auto& pointOnEyeDisplay) {
+                auto drawPupils = [](const auto& mainDisplay,
+                                      const auto& pointOnMainDisplay,
+                                      const auto& eyeDisplay,
+                                      const auto& pointOnEyeDisplay) {
                     const auto MainRadius = 3;
                     const auto EyeDisplayRadius = 4;
                     const auto Thickness = -1;
@@ -280,7 +279,6 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                     cvDrawCircle(mainDisplay, pointOnMainDisplay, MainRadius, color, Thickness, LineType, Shift);
                     cvDrawCircle(eyeDisplay, pointOnEyeDisplay, EyeDisplayRadius, color, Thickness, LineType, Shift);
                 };
-
 
                 if (bAvgLeft) {
 
@@ -316,10 +314,10 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                     cvResize(m_pLeftEyeImg, pLeftEyeDisplay);
                     if (IsDlgButtonChecked(IDC_CSHOWPUPIL)) {
 
-                        drawPupils(pDisplay, 
-                                   cvPoint((int)(cPupilLeft.x * dWidthRatio), (int)(cPupilLeft.y * dHeightRatio)),
-                                   pLeftEyeDisplay,
-                                   cvPoint((int)(cPupilCenter.x * dEyeWidthRatio), (int)(cPupilCenter.y * dEyeHeightRatio)));
+                        drawPupils(pDisplay,
+                            cvPoint((int)(cPupilLeft.x * dWidthRatio), (int)(cPupilLeft.y * dHeightRatio)),
+                            pLeftEyeDisplay,
+                            cvPoint((int)(cPupilCenter.x * dEyeWidthRatio), (int)(cPupilCenter.y * dEyeHeightRatio)));
 
                         CString strLog;
                         strLog.Format(L"Detected Left Pupil (x=%d y=%d)", cPupilLeft.x, cPupilLeft.y);
@@ -373,10 +371,10 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                     double dEyeHeightRatio = ((double)m_iRightEyeWndHeight) / m_pRightEyeImg->height;
 
                     if (IsDlgButtonChecked(IDC_CSHOWPUPIL)) {
-                        drawPupils(pDisplay, 
-                                   cvPoint((int)(cPupilRight.x * dWidthRatio), (int)(cPupilRight.y * dHeightRatio)),
-                                   pRightEyeDisplay,
-                                   cvPoint((int)(cPupilCenter.x * dEyeWidthRatio), (int)(cPupilCenter.y * dEyeHeightRatio)));
+                        drawPupils(pDisplay,
+                            cvPoint((int)(cPupilRight.x * dWidthRatio), (int)(cPupilRight.y * dHeightRatio)),
+                            pRightEyeDisplay,
+                            cvPoint((int)(cPupilCenter.x * dEyeWidthRatio), (int)(cPupilCenter.y * dEyeHeightRatio)));
 
                         CString strLog;
                         strLog.Format(L"Detected Right Pupil (x=%d y=%d)", cPupilRight.x, cPupilRight.y);

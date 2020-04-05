@@ -37,45 +37,39 @@ SOFTWARE.
 
 using namespace cv;
 
-CvHaarClassifierCascade* CObjectDetection::m_pFacesCascade = (CvHaarClassifierCascade*)cvLoad("haarcascade_frontalface_alt.xml");
-CvHaarClassifierCascade* CObjectDetection::m_pEyesCascade = (CvHaarClassifierCascade*)cvLoad("haarcascade_eye.xml");
-
 CvMemStorage* CObjectDetection::m_pStorage = cvCreateMemStorage(0);
 
-CvRect* CObjectDetection::DetectFace(IplImage* img)
+void CObjectDetection::Init()
 {
-    int iResizeRatio = 2;
+    m_pFacesCascade.load("haarcascade_frontalface_alt.xml");
+    m_pEyesCascade.load("haarcascade_eye.xml");
+}
+
+std::optional<cv::Rect> CObjectDetection::DetectFace(IplImage* img)
+{
+    constexpr int iResizeRatio = 2;
     IplImage* pSmallImg = cvCreateImage(cvSize(img->width / iResizeRatio, img->height / iResizeRatio), IPL_DEPTH_8U, 3);
     cvResize(img, pSmallImg);
-    CvSeq* pFaces = cvHaarDetectObjects(
-        pSmallImg,
-        m_pFacesCascade,
-        m_pStorage,
-        1.2,
-        1,
-        CV_HAAR_DO_CANNY_PRUNING);
+    std::vector<Rect> faces;
+    m_pFacesCascade.detectMultiScale(cv::cvarrToMat(pSmallImg), faces, 1.1, 2, 0 | CASCADE_SCALE_IMAGE, Size(30, 30));
+
 #ifdef DEBUG
     cv::imwrite("small_face.jpg", cv::cvarrToMat(pSmallImg));
 #endif
     cvReleaseImage(&pSmallImg);
-    if (pFaces->total == 0) {
-        return NULL;
+    if (faces.size() == 0) {
+        return std::nullopt;
     }
 
-    CvRect* pFaceRect = (CvRect*)cvGetSeqElem(pFaces, 0);
-
-    if (pFaceRect) {
-        pFaceRect->x *= iResizeRatio;
-        pFaceRect->y *= iResizeRatio;
-
-        pFaceRect->width *= iResizeRatio;
-        pFaceRect->height *= iResizeRatio;
-    }
-
-    return pFaceRect;
+    auto face = faces[0];
+    face.x *= iResizeRatio;
+    face.y *= iResizeRatio;
+    face.width *= iResizeRatio;
+    face.height *= iResizeRatio;
+    return face;
 }
 
-void CObjectDetection::DetectEyes(IplImage* img, CvRect* pFace, CvRect* pLeftEye, CvRect* pRightEye)
+void CObjectDetection::DetectEyes(IplImage* img, const Rect& face, CvRect* pLeftEye, CvRect* pRightEye)
 {
     pLeftEye->height = 0;
     pLeftEye->width = 0;
@@ -91,92 +85,78 @@ void CObjectDetection::DetectEyes(IplImage* img, CvRect* pFace, CvRect* pLeftEye
     int iSearchImageHeight = 0;
     int iSearchImageWidth = 0;
     int iSearchImageHeightOffset = 0;
-    if (pFace != NULL) {
 
-        iSearchImageHeight = pFace->height / 3;
-        iSearchImageHeightOffset = pFace->height / 5;
-        iSearchImageWidth = pFace->width;
+    iSearchImageHeight = face.height / 3;
+    iSearchImageHeightOffset = face.height / 5;
+    iSearchImageWidth = face.width;
 
-        CvRect cROI = cvRect(pFace->x, pFace->y + iSearchImageHeightOffset, iSearchImageWidth, iSearchImageHeight);
-        if ((cROI.x + cROI.width >= img->width) || (cROI.y + cROI.height >= img->height)) {
-            pFace->width = 0;
-            pFace->height = 0;
-            return;
-        }
-
-        pEyeSearchImg = cvCreateImage(cvSize(iSearchImageWidth, iSearchImageHeight), IPL_DEPTH_8U, 3);
-        cvSetImageROI(img, cROI);
-        cvCopy(img, pEyeSearchImg, NULL);
-        cvResetImageROI(img);
-#ifdef DEBUG
-        auto pSearchDrawnImg = cvCreateImage(cvGetSize(img), img->depth, img->nChannels);
-        cvCopy(img, pSearchDrawnImg);
-        cvRectangle(pSearchDrawnImg, cvPoint(pFace->x, pFace->y + iSearchImageHeightOffset), cvPoint(pFace->x + pFace->width, pFace->y + iSearchImageHeight + iSearchImageHeightOffset), CV_RGB(0, 0, 0), 1, 0, 0);
-        //cv::  cvSaveImage("eye_search.jpg",pSearchDrawnImg);
-        cvReleaseImage(&pSearchDrawnImg);
-#endif DEBUG
-    } else {
+    CvRect cROI = cvRect(face.x, face.y + iSearchImageHeightOffset, iSearchImageWidth, iSearchImageHeight);
+    if ((cROI.x + cROI.width >= img->width) || (cROI.y + cROI.height >= img->height)) {
         return;
     }
+
+    pEyeSearchImg = cvCreateImage(cvSize(iSearchImageWidth, iSearchImageHeight), IPL_DEPTH_8U, 3);
+    cvSetImageROI(img, cROI);
+    cvCopy(img, pEyeSearchImg, NULL);
+    cvResetImageROI(img);
+#ifdef DEBUG
+    // auto pSearchDrawnImg = cvCreateImage(cvGetSize(img), img->depth, img->nChannels);
+    //cvCopy(img, pSearchDrawnImg);
+    //cvRectangle(pSearchDrawnImg, cvPoint(face.x, face.y + iSearchImageHeightOffset), cvPoint(face.x + face.width, face.y + iSearchImageHeight + iSearchImageHeightOffset), CV_RGB(0, 0, 0), 1, 0, 0);
+    //cv::  cvSaveImage("eye_search.jpg",pSearchDrawnImg);
+    //cvReleaseImage(&pSearchDrawnImg);
+#endif DEBUG
 
     double dFactor = 1.2;
     int iMinNeigbours = 5;
 
-    CvSeq* pEyes = cvHaarDetectObjects(
-        pEyeSearchImg,
-        m_pEyesCascade,
-        m_pStorage,
-        dFactor,
-        iMinNeigbours,
-        CV_HAAR_DO_CANNY_PRUNING);
+    std::vector<Rect> eyes;
+    m_pEyesCascade.detectMultiScale(cv::cvarrToMat(pEyeSearchImg), eyes, dFactor, iMinNeigbours, CASCADE_SCALE_IMAGE);
 
-    for (int i = 0; i < pEyes->total; ++i) {
+    for (auto& eye : eyes) {
 
-        CvRect* pEyeRect = (CvRect*)cvGetSeqElem(pEyes, i);
+        eye.x += face.x;
+        eye.y = face.y + eye.y + iSearchImageHeightOffset;
 
-        pEyeRect->x += pFace->x;
-        pEyeRect->y = pFace->y + pEyeRect->y + iSearchImageHeightOffset;
-
-        int iEyeX = pEyeRect->x + pEyeRect->width / 2;
-        int iDistFromLeft = iEyeX - pFace->x;
-        int iDistFromRight = pFace->x + pFace->width - iEyeX;
+        int iEyeX = eye.x + eye.width / 2;
+        int iDistFromLeft = iEyeX - face.x;
+        int iDistFromRight = face.x + face.width - iEyeX;
 
         if (iDistFromLeft >= iDistFromRight) {
-            pLeftEye->height = pEyeRect->height;
-            pLeftEye->width = pEyeRect->width;
-            pLeftEye->x = pEyeRect->x;
-            pLeftEye->y = pEyeRect->y;
+            pLeftEye->height = eye.height;
+            pLeftEye->width = eye.width;
+            pLeftEye->x = eye.x;
+            pLeftEye->y = eye.y;
         } else {
-            pRightEye->height = pEyeRect->height;
-            pRightEye->width = pEyeRect->width;
-            pRightEye->x = pEyeRect->x;
-            pRightEye->y = pEyeRect->y;
+            pRightEye->height = eye.height;
+            pRightEye->width = eye.width;
+            pRightEye->x = eye.x;
+            pRightEye->y = eye.y;
         }
-        if (pEyes->total == 1) {
+        if (eyes.size() == 1) {
             if (pRightEye->height) {
                 pLeftEye->width = pRightEye->width;
                 pLeftEye->height = pRightEye->height;
-                pLeftEye->x = pFace->x + pFace->width - iDistFromLeft - (int)(pRightEye->width / 2);
+                pLeftEye->x = face.x + face.width - iDistFromLeft - (int)(pRightEye->width / 2);
                 pLeftEye->y = pRightEye->y;
             } else {
                 pRightEye->width = pLeftEye->width;
                 pRightEye->height = pLeftEye->height;
-                pRightEye->x = pFace->x + iDistFromRight - (int)(pLeftEye->width / 2);
+                pRightEye->x = face.x + iDistFromRight - (int)(pLeftEye->width / 2);
                 pRightEye->y = pLeftEye->y;
             }
-
             break;
         }
     }
 
-#ifdef DEBUG
-    auto pEyeDrawnImg = cvCreateImage(cvGetSize(img), img->depth, img->nChannels);
+#if 0
+    auto pEyeDrawnImg = cvCreateImage(img->nSize, img->depth, img->nChannels);
     cvCopy(img, pEyeDrawnImg);
     cvRectangle(pEyeDrawnImg, cvPoint(pLeftEye->x, pLeftEye->y), cvPoint(pLeftEye->x + pLeftEye->width, pLeftEye->y + pLeftEye->height), CV_RGB(0, 0, 0), 1, 0, 0);
     cvRectangle(pEyeDrawnImg, cvPoint(pRightEye->x, pRightEye->y), cvPoint(pRightEye->x + pRightEye->width, pRightEye->y + pRightEye->height), CV_RGB(0, 0, 0), 1, 0, 0);
     cvSaveImage("eye_drawn.jpg", pEyeDrawnImg);
     cvReleaseImage(&pEyeDrawnImg);
-#endif DEBUG
+#endif
 
     cvReleaseImage(&pEyeSearchImg);
 }
@@ -190,9 +170,11 @@ void CObjectDetection::Clear()
 CvPoint CObjectDetection::DetectPupilCDF(IplImage* pEyeImg)
 {
     CvPoint cPupil;
-    IplImage* pGrayEyeImg = cvCreateImage(cvSize(pEyeImg->width, pEyeImg->height), 8, 1);
-    IplImage* pGrayEyeBinaryImg = cvCreateImage(cvGetSize(pGrayEyeImg), IPL_DEPTH_8U, 1);
-    IplImage* pGrayEyeBinaryErodedImg = cvCreateImage(cvGetSize(pGrayEyeImg), IPL_DEPTH_8U, 1);
+    const auto imageSize = cvSize(pEyeImg->width, pEyeImg->height);
+
+    IplImage* pGrayEyeImg = cvCreateImage(imageSize, 8, 1);
+    IplImage* pGrayEyeBinaryImg = cvCreateImage(imageSize, IPL_DEPTH_8U, 1);
+    IplImage* pGrayEyeBinaryErodedImg = cvCreateImage(imageSize, IPL_DEPTH_8U, 1);
 
     cvCvtColor(pEyeImg, pGrayEyeImg, CV_BGR2GRAY);
 
@@ -201,7 +183,7 @@ CvPoint CObjectDetection::DetectPupilCDF(IplImage* pEyeImg)
     IplConvKernel* pErosionKernel = cvCreateStructuringElementEx(2, 2, 0, 0, CV_SHAPE_RECT);
     cvErode(pGrayEyeBinaryImg, pGrayEyeBinaryErodedImg, pErosionKernel, 1);
 
-    IplImage* pGrayEyeErodedImg = cvCreateImage(cvGetSize(pGrayEyeImg), IPL_DEPTH_8U, 1);
+    IplImage* pGrayEyeErodedImg = cvCreateImage(imageSize, IPL_DEPTH_8U, 1);
     cvErode(pGrayEyeImg, pGrayEyeErodedImg, pErosionKernel, 1);
 
     CvPoint cPMI, cMaxLoc;
@@ -246,10 +228,12 @@ CvPoint CObjectDetection::DetectPupilCDF(IplImage* pEyeImg)
     cvResize(pGrayEyeBinaryErodedImg, eroded_bin);
     cvResize(pGrayEyeBinaryImg, binary);
 
-    cvSaveImage("input.jpg", gray);
-    cvSaveImage("cdf.jpg", binary);
-    cvSaveImage("cdf_eroded.jpg", eroded_bin);
-    cvSaveImage("eroded.jpg", eroded);
+    //cv::imwrite("input_edge.jpg"
+
+    cv::imwrite("input.jpg", cv::cvarrToMat(gray));
+    cv::imwrite("cdf.jpg", cv::cvarrToMat(binary));
+    cv::imwrite("cdf_eroded.jpg", cv::cvarrToMat(eroded_bin));
+    cv::imwrite("eroded.jpg", cv::cvarrToMat(eroded));
 
     cvShowImage("eroded", eroded);
     cvShowImage("gray", gray);
@@ -336,16 +320,14 @@ double CObjectDetection::CFDThreshold(IplImage* pEyeImg, IplImage* pEyeImgOut, d
             double fCDF = 0;
 
             for (int i = 0; i <= iValue; ++i) {
-                double fHistValue = cvGetReal1D(pHist, i) / iPixelNumber;
+                double fHistValue = cvGetReal1D(&pHist->mat, i) / iPixelNumber;
                 fCDF += fHistValue;
             }
             CvScalar s;
             if (fCDF <= fTreshold) {
                 s.val[0] = 255;
                 ++passedPixels;
-            }
-
-            else
+            } else
                 s.val[0] = 0;
 
             cvSet2D(pEyeImgOut, iX, iY, s);
@@ -386,9 +368,11 @@ CvPoint CObjectDetection::DetectPupilEdge(IplImage* pEyeImg)
     int iThersholdX = (int)(0.25 * pEyeImg->width);
     int iThersholdY = (int)(0.25 * pEyeImg->height);
 
-    IplImage* pNormalized = cvCreateImage(cvGetSize(pEyeImg), 8, 1);
-    IplImage* pGrayEyeImg = cvCreateImage(cvGetSize(pEyeImg), 8, 1);
-    IplImage* pCannyEyeImg = cvCreateImage(cvGetSize(pGrayEyeImg), IPL_DEPTH_8U, 1);
+    const auto imageSize = cvSize(pEyeImg->width, pEyeImg->height);
+
+    IplImage* pNormalized = cvCreateImage(imageSize, 8, 1);
+    IplImage* pGrayEyeImg = cvCreateImage(imageSize, 8, 1);
+    IplImage* pCannyEyeImg = cvCreateImage(imageSize, IPL_DEPTH_8U, 1);
 
     cvCvtColor(pEyeImg, pGrayEyeImg, CV_BGR2GRAY);
     cvNormalize(pGrayEyeImg, pNormalized, 0, 255, CV_MINMAX);
@@ -461,13 +445,13 @@ CvPoint CObjectDetection::DetectPupilEdge(IplImage* pEyeImg)
     cPupil.y = (yBorder1 + yBorder2) / 2;
 
 #ifdef DEBUG
-    cvSaveImage("canny.jpg", pCannyEyeImg);
+
+    cv::imwrite("canny.jpg", cv::cvarrToMat(pCannyEyeImg));
     cvDrawLine(pCannyEyeImg, cvPoint(xBorder1, 0), cvPoint(xBorder1, pEyeImg->height), CV_RGB(127, 127, 127), 1, 8, 0);
     cvDrawLine(pCannyEyeImg, cvPoint(xBorder2, 0), cvPoint(xBorder2, pEyeImg->height), CV_RGB(127, 127, 127), 1, 8, 0);
     cvDrawLine(pCannyEyeImg, cvPoint(0, yBorder1), cvPoint(pEyeImg->width, yBorder1), CV_RGB(127, 127, 127), 1, 8, 0);
     cvDrawLine(pCannyEyeImg, cvPoint(0, yBorder2), cvPoint(pEyeImg->width, yBorder2), CV_RGB(127, 127, 127), 1, 8, 0);
-    cvSaveImage("canny_inter.jpg", pCannyEyeImg);
-    cvSaveImage("canny_inter.jpg", pCannyEyeImg);
+    cv::imwrite("canny_inter.jpg", cv::cvarrToMat(pCannyEyeImg));
     cvDrawLine(pNormalized, cvPoint(xBorder2, 0), cvPoint(xBorder2, pEyeImg->height), CV_RGB(0, 0, 0), 1, 8, 0);
     cvDrawLine(pNormalized, cvPoint(xBorder1, 0), cvPoint(xBorder1, pEyeImg->height), CV_RGB(0, 0, 0), 1, 8, 0);
     cvDrawLine(pNormalized, cvPoint(0, yBorder1), cvPoint(pEyeImg->width, yBorder1), CV_RGB(0, 0, 0), 1, 8, 0);
@@ -484,8 +468,8 @@ CvPoint CObjectDetection::DetectPupilEdge(IplImage* pEyeImg)
     cvReleaseImage(&normdIsp);
     cvShowImage("canny", pCannyDispl);
 
-    cvSaveImage("input_edge.jpg", pGrayEyeImg);
-    cvSaveImage("edge_gray.jpg", pNormalized);
+    cv::imwrite("input_edge.jpg", cv::cvarrToMat(pGrayEyeImg));
+    cv::imwrite("edge_gray.jpg", cv::cvarrToMat(pNormalized));
     cvReleaseImage(&pCannyDispl);
 #endif
 
@@ -497,9 +481,7 @@ CvPoint CObjectDetection::DetectPupilEdge(IplImage* pEyeImg)
 
 CvPoint CObjectDetection::DetectPupilGPF(IplImage* pEyeImg)
 {
-
     double alfa = 0;
-
     CvPoint cPupil;
     cPupil.x = -1;
     cPupil.y = -1;
@@ -517,9 +499,10 @@ CvPoint CObjectDetection::DetectPupilGPF(IplImage* pEyeImg)
     IplImage* pDisplay2 = cvCreateImage(cvSize(250, 150), 8, 1);
     IplImage* pDisplay3 = cvCreateImage(cvSize(250, 150), 8, 1);
 #endif
-    IplImage* pGrayEyeImg = cvCreateImage(cvGetSize(pEyeImg), 8, 1);
-    IplImage* pGrayEyeImgH = cvCreateImage(cvGetSize(pEyeImg), 8, 1);
-    IplImage* pGrayEyeImgV = cvCreateImage(cvGetSize(pEyeImg), 8, 1);
+    const auto imageSize = cvSize(pEyeImg->width, pEyeImg->height);
+    IplImage* pGrayEyeImg = cvCreateImage(imageSize, 8, 1);
+    IplImage* pGrayEyeImgH = cvCreateImage(imageSize, 8, 1);
+    IplImage* pGrayEyeImgV = cvCreateImage(imageSize, 8, 1);
     cvCvtColor(pEyeImg, pGrayEyeImg, CV_BGR2GRAY);
     cvCvtColor(pEyeImg, pGrayEyeImgH, CV_BGR2GRAY);
     cvCvtColor(pEyeImg, pGrayEyeImgV, CV_BGR2GRAY);
@@ -644,9 +627,9 @@ CvPoint CObjectDetection::DetectPupilGPF(IplImage* pEyeImg)
     cPupil.x = (iEyeCor1 + iEyeCor2) / 2;
 
 #ifdef DEBUG
-    cvSaveImage("gph.jpg", pGrayEyeImgH);
-    cvSaveImage("gpv.jpg", pGrayEyeImgV);
-    cvSaveImage("gpf_lines.jpg", pGrayEyeImg);
+    cv::imwrite("gph.jpg", cv::cvarrToMat(pGrayEyeImgH));
+    cv::imwrite("gpv.jpg", cv::cvarrToMat(pGrayEyeImgV));
+    cv::imwrite("gpf_lines.jpg", cv::cvarrToMat(pGrayEyeImg));
     cvResize(pGrayEyeImgH, pDisplay);
     cvResize(pGrayEyeImgV, pDisplay2);
     cvResize(pGrayEyeImg, pDisplay3);
