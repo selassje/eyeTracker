@@ -32,9 +32,8 @@ SOFTWARE.
 #include <opencv2/imgproc.hpp>
 #include <queue>
 
-using namespace cv;
-
-CvMemStorage* CObjectDetection::m_pStorage = cvCreateMemStorage(0);
+#undef max
+#undef min
 
 void CObjectDetection::Init()
 {
@@ -42,60 +41,42 @@ void CObjectDetection::Init()
     m_pEyesCascade.load("haarcascade_eye.xml");
 }
 
-std::optional<cv::Rect> CObjectDetection::DetectFace(IplImage* img)
+std::optional<cv::Rect> CObjectDetection::DetectFace(const cv::Mat& img)
 {
-    constexpr int iResizeRatio = 2;
-    IplImage* pSmallImg = cvCreateImage(cvSize(img->width / iResizeRatio, img->height / iResizeRatio), IPL_DEPTH_8U, 3);
-    cvResize(img, pSmallImg);
-    std::vector<Rect> faces;
-    m_pFacesCascade.detectMultiScale(cv::cvarrToMat(pSmallImg), faces, 1.1, 2, 0 | CASCADE_SCALE_IMAGE, Size(30, 30));
-
+    constexpr auto resizeRatio = 2;
+    cv::Mat smallImg;
+    cv::resize(img, smallImg, cv::Size {}, resizeRatio, resizeRatio);
+    std::vector<cv::Rect> faces;
+    m_pFacesCascade.detectMultiScale(smallImg, faces, 1.1, 2, 0 | cv::CASCADE_SCALE_IMAGE, cv::Size(30, 30));
 #ifdef DEBUG
-    cv::imwrite("small_face.jpg", cv::cvarrToMat(pSmallImg));
+    cv::imwrite("small_face.jpg", smallImg);
 #endif
-    cvReleaseImage(&pSmallImg);
     if (faces.size() == 0) {
         return std::nullopt;
     }
 
     auto face = faces[0];
-    face.x *= iResizeRatio;
-    face.y *= iResizeRatio;
-    face.width *= iResizeRatio;
-    face.height *= iResizeRatio;
+    face.x *= resizeRatio;
+    face.y *= resizeRatio;
+    face.width *= resizeRatio;
+    face.height *= resizeRatio;
     return face;
 }
 
-void CObjectDetection::DetectEyes(IplImage* img, const Rect& face, CvRect* pLeftEye, CvRect* pRightEye)
+void CObjectDetection::DetectEyes(const cv::Mat& img, const cv::Rect& face, cv::Rect& leftEye, cv::Rect& rightEye)
 {
-    pLeftEye->height = 0;
-    pLeftEye->width = 0;
-    pRightEye->height = 0;
-    pRightEye->width = 0;
+    auto searchImageHeight = face.height / 3;
+    auto searchImageHeightOffset = face.height / 5;
+    auto searchImageWidth = face.width;
 
-    pLeftEye->x = -1;
-    pLeftEye->y = -1;
-    pRightEye->x = -1;
-    pRightEye->y = -1;
-
-    IplImage* pEyeSearchImg;
-    int iSearchImageHeight = 0;
-    int iSearchImageWidth = 0;
-    int iSearchImageHeightOffset = 0;
-
-    iSearchImageHeight = face.height / 3;
-    iSearchImageHeightOffset = face.height / 5;
-    iSearchImageWidth = face.width;
-
-    CvRect cROI = cvRect(face.x, face.y + iSearchImageHeightOffset, iSearchImageWidth, iSearchImageHeight);
-    if ((cROI.x + cROI.width >= img->width) || (cROI.y + cROI.height >= img->height)) {
+    auto ROI = cv::Rect(face.x, face.y + searchImageHeightOffset, searchImageWidth, searchImageHeight);
+    if ((ROI.x + ROI.width >= img.cols) || (ROI.y + ROI.height >= img.rows)) {
         return;
     }
 
-    pEyeSearchImg = cvCreateImage(cvSize(iSearchImageWidth, iSearchImageHeight), IPL_DEPTH_8U, 3);
-    cvSetImageROI(img, cROI);
-    cvCopy(img, pEyeSearchImg, NULL);
-    cvResetImageROI(img);
+    cv::Mat eyeSearchImg { searchImageHeight, searchImageWidth, CV_8UC3 };
+    img(ROI).copyTo(eyeSearchImg);
+
 #ifdef DEBUG
     // auto pSearchDrawnImg = cvCreateImage(cvGetSize(img), img->depth, img->nChannels);
     //cvCopy(img, pSearchDrawnImg);
@@ -104,45 +85,38 @@ void CObjectDetection::DetectEyes(IplImage* img, const Rect& face, CvRect* pLeft
     //cvReleaseImage(&pSearchDrawnImg);
 #endif DEBUG
 
-    double dFactor = 1.2;
-    int iMinNeigbours = 5;
+    constexpr auto scaleFactor = 1.0;
+    constexpr auto minNeigbours = 5;
 
-    std::vector<Rect> eyes;
-    m_pEyesCascade.detectMultiScale(cv::cvarrToMat(pEyeSearchImg), eyes, dFactor, iMinNeigbours, CASCADE_SCALE_IMAGE);
+    std::vector<cv::Rect> eyes;
+    m_pEyesCascade.detectMultiScale(eyeSearchImg, eyes, scaleFactor, minNeigbours, cv::CASCADE_SCALE_IMAGE);
+
+    auto distFromLeft = 0;
+    auto distFromRight = 0;
 
     for (auto& eye : eyes) {
+        eye.x += ROI.x;
+        eye.y += ROI.y;
 
-        eye.x += face.x;
-        eye.y = face.y + eye.y + iSearchImageHeightOffset;
+        int eyeX = eye.x + eye.width / 2;
+        distFromLeft = eyeX - face.x;
+        distFromRight = face.x + face.width - eyeX;
 
-        int iEyeX = eye.x + eye.width / 2;
-        int iDistFromLeft = iEyeX - face.x;
-        int iDistFromRight = face.x + face.width - iEyeX;
-
-        if (iDistFromLeft >= iDistFromRight) {
-            pLeftEye->height = eye.height;
-            pLeftEye->width = eye.width;
-            pLeftEye->x = eye.x;
-            pLeftEye->y = eye.y;
+        if (distFromLeft >= distFromRight) {
+            leftEye = eye;
         } else {
-            pRightEye->height = eye.height;
-            pRightEye->width = eye.width;
-            pRightEye->x = eye.x;
-            pRightEye->y = eye.y;
+            rightEye = eye;
         }
-        if (eyes.size() == 1) {
-            if (pRightEye->height) {
-                pLeftEye->width = pRightEye->width;
-                pLeftEye->height = pRightEye->height;
-                pLeftEye->x = face.x + face.width - iDistFromLeft - (int)(pRightEye->width / 2);
-                pLeftEye->y = pRightEye->y;
-            } else {
-                pRightEye->width = pLeftEye->width;
-                pRightEye->height = pLeftEye->height;
-                pRightEye->x = face.x + iDistFromRight - (int)(pLeftEye->width / 2);
-                pRightEye->y = pLeftEye->y;
-            }
-            break;
+    }
+
+    if (eyes.size() == 1) {
+        if (!rightEye.empty()) {
+            leftEye = rightEye;
+            leftEye.x = face.x + face.width - distFromLeft - rightEye.width / 2;
+
+        } else {
+            rightEye = leftEye;
+            rightEye.x = face.x + distFromRight - leftEye.width / 2;
         }
     }
 
@@ -154,62 +128,42 @@ void CObjectDetection::DetectEyes(IplImage* img, const Rect& face, CvRect* pLeft
     cvSaveImage("eye_drawn.jpg", pEyeDrawnImg);
     cvReleaseImage(&pEyeDrawnImg);
 #endif
-
-    cvReleaseImage(&pEyeSearchImg);
 }
 
-void CObjectDetection::Clear()
+cv::Point CObjectDetection::DetectPupilCDF(const cv::Mat& eyeImg)
 {
-    cvReleaseMemStorage(&m_pStorage);
-    m_pStorage = cvCreateMemStorage(0);
-}
+    const auto imageSize = cv::Size { eyeImg.cols, eyeImg.rows };
+    cv::Mat grayEyeImg { imageSize, CV_8UC1 };
+    cv::Mat grayEyeBinaryImg { imageSize, CV_8UC1 };
+    cv::Mat grayEyeBinaryErodedImg { imageSize, CV_8UC1 };
+    cv::Mat grayEyeErodedImg { imageSize, CV_8UC1 };
 
-CvPoint CObjectDetection::DetectPupilCDF(IplImage* pEyeImg)
-{
-    CvPoint cPupil;
-    const auto imageSize = cvSize(pEyeImg->width, pEyeImg->height);
+    cv::cvtColor(eyeImg, grayEyeImg, cv::COLOR_BGR2GRAY);
+    CFDThreshold(grayEyeImg, grayEyeBinaryImg, 0.05);
 
-    IplImage* pGrayEyeImg = cvCreateImage(imageSize, 8, 1);
-    IplImage* pGrayEyeBinaryImg = cvCreateImage(imageSize, IPL_DEPTH_8U, 1);
-    IplImage* pGrayEyeBinaryErodedImg = cvCreateImage(imageSize, IPL_DEPTH_8U, 1);
+    auto erosionKernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size { 2, 2 }, cv::Point { 0, 0 });
+    cv::erode(grayEyeBinaryImg, grayEyeBinaryErodedImg, erosionKernel, cv::Point(0, 0));
+    cv::erode(grayEyeImg, grayEyeErodedImg, erosionKernel, cv::Point(0, 0));
 
-    cvCvtColor(pEyeImg, pGrayEyeImg, CV_BGR2GRAY);
+    cv::Point PMI {};
+    cv::Point maxLoc {};
+    double minVal {};
+    double maxVal {};
 
-    CFDThreshold(pGrayEyeImg, pGrayEyeBinaryImg, 0.05);
+    cv::minMaxLoc(grayEyeImg, &minVal, &maxVal, &PMI, &maxLoc);
 
-    IplConvKernel* pErosionKernel = cvCreateStructuringElementEx(2, 2, 0, 0, CV_SHAPE_RECT);
-    cvErode(pGrayEyeBinaryImg, pGrayEyeBinaryErodedImg, pErosionKernel, 1);
+    constexpr auto avgRegionSize = 10;
+    constexpr auto regionIrisSize = static_cast<decltype(avgRegionSize)>(1.5 * avgRegionSize);
+    const auto leftX = std::max(0, PMI.x - avgRegionSize / 2);
+    const auto rightX = std::min(grayEyeImg.cols - 1, PMI.x + avgRegionSize / 2);
+    const auto topY = std::max(0, PMI.y - avgRegionSize / 2);
+    const auto bottomY = std::min(grayEyeImg.rows - 1, PMI.y + avgRegionSize / 2);
+    const auto avgRegionWidth = rightX - leftX + 1;
+    const auto avgRegionHeight = bottomY - topY + 1;
+    const auto ROI = grayEyeImg(cv::Rect { leftX, topY, avgRegionWidth, avgRegionHeight });
+    const int avgThreshold = static_cast<int>(cv::mean(ROI)[0]);
 
-    IplImage* pGrayEyeErodedImg = cvCreateImage(imageSize, IPL_DEPTH_8U, 1);
-    cvErode(pGrayEyeImg, pGrayEyeErodedImg, pErosionKernel, 1);
-
-    CvPoint cPMI, cMaxLoc;
-    double dMinVal, dMaxVal;
-    cvMinMaxLoc(pGrayEyeImg, &dMinVal, &dMaxVal, &cPMI, &cMaxLoc, pGrayEyeBinaryImg);
-
-    int iAvgRegionSize = 10;
-    int iRegionIrisSize = (int)(1.5 * iAvgRegionSize);
-    int iLeftX = cPMI.x - iAvgRegionSize / 2;
-    if (iLeftX < 0)
-        iLeftX = 0;
-    int iRightX = cPMI.x + iAvgRegionSize / 2;
-    if (iRightX > pGrayEyeImg->width - 1)
-        iRightX = pGrayEyeImg->width - 1;
-    int iTopY = cPMI.y - iAvgRegionSize / 2;
-    if (iTopY < 0)
-        iTopY = 0;
-    int iBottomY = cPMI.y + iAvgRegionSize / 2;
-    if (iBottomY > pGrayEyeImg->height - 1)
-        iBottomY = pGrayEyeImg->height - 1;
-
-    int iAvgRegionWidth = iRightX - iLeftX + 1;
-    int iAvgRegionHeight = iBottomY - iTopY + 1;
-
-    cvSetImageROI(pGrayEyeImg, cvRect(iLeftX, iTopY, iAvgRegionWidth, iAvgRegionHeight));
-    int iAvgTheshold = (int)cvAvg(pGrayEyeImg).val[0];
-    cvResetImageROI(pGrayEyeImg);
-
-#ifdef DEBUG
+#if 0
 
     cvNamedWindow("eroded", 1);
     cvNamedWindow("eroded_bin", 1);
@@ -242,98 +196,69 @@ CvPoint CObjectDetection::DetectPupilCDF(IplImage* pEyeImg)
     cvReleaseImage(&binary);
 
 #endif
+    const auto irisLeftX = std::max(0, PMI.x - regionIrisSize / 2);
+    const auto irisRightX = std::min(grayEyeImg.cols - 1, PMI.x + regionIrisSize / 2);
+    const auto irisTopY = std::max(0, PMI.y - regionIrisSize / 2);
+    const auto irisBottomY = std::min(grayEyeImg.rows - 1, PMI.y + regionIrisSize / 2);
 
-    int iIrisLeftX = cPMI.x - iRegionIrisSize / 2;
-    if (iIrisLeftX < 0)
-        iIrisLeftX = 0;
-    int iIrisRightX = cPMI.x + iRegionIrisSize / 2;
-    if (iIrisRightX > pGrayEyeImg->width - 1)
-        iIrisRightX = pGrayEyeImg->width - 1;
-    int iIrisTopY = cPMI.y - iRegionIrisSize / 2;
-    if (iIrisTopY < 0)
-        iIrisTopY = 0;
-    int iIrisBottomY = cPMI.y + iRegionIrisSize / 2;
-    if (iIrisBottomY > pGrayEyeImg->height - 1)
-        iIrisBottomY = pGrayEyeImg->height - 1;
+    const auto irisWidth = irisRightX - irisLeftX + 1;
+    const auto irisHeight = irisBottomY - irisTopY + 1;
 
-    int iIrisWidth = iIrisRightX - iIrisLeftX + 1;
-    int iIrisHeight = iIrisBottomY - iIrisTopY + 1;
+    auto total = 0;
+    auto centerX = 0;
+    auto centerY = 0;
 
-    int iTotal = 0;
-    int iCenterX = 0;
-    int iCenterY = 0;
-
-    for (int x = iIrisLeftX; x <= iIrisRightX; ++x)
-        for (int y = iIrisTopY; y <= iIrisBottomY; ++y) {
-            int iIntensity = (int)cvGet2D(pGrayEyeErodedImg, y, x).val[0];
-            if (iIntensity < iAvgTheshold) {
-                iIntensity = 1;
-                iCenterX += iIntensity * x;
-                iCenterY += iIntensity * y;
-                iTotal += iIntensity;
+    for (auto x = irisLeftX; x <= irisRightX; ++x)
+        for (auto y = irisTopY; y <= irisBottomY; ++y) {
+            int intensity = grayEyeErodedImg.at<unsigned char>(y, x);
+            if (intensity < avgThreshold) {
+                centerX += x;
+                centerY += y;
+                ++total;
             }
         }
 
-    if (iTotal) {
-        iCenterX = cvRound(iCenterX / iTotal);
-        iCenterY = cvRound(iCenterY / iTotal);
+    if (total != 0) {
+        centerX = cvRound(centerX / total);
+        centerY = cvRound(centerY / total);
     }
-    cPupil.x = iCenterX;
-    cPupil.y = iCenterY;
-
-    cvReleaseStructuringElement(&pErosionKernel);
-    cvReleaseImage(&pGrayEyeImg);
-    cvReleaseImage(&pGrayEyeBinaryImg);
-    cvReleaseImage(&pGrayEyeBinaryErodedImg);
-    cvReleaseImage(&pGrayEyeErodedImg);
-
-    return cPupil;
+    return { centerX, centerY };
 }
 
-double CObjectDetection::CFDThreshold(IplImage* pEyeImg, IplImage* pEyeImgOut, double fTreshold)
+double CObjectDetection::CFDThreshold(const cv::Mat& eyeImg, cv::Mat& eyeImgOut, const double threshold)
 {
-    int high_count = 0;
-    int passedPixels = 0;
+    const int bins = 256;
+    int histSize[] = { bins };
+    float ranges[] = { 0, static_cast<float>(bins - 1) };
+    const float* histRanges[] = { ranges };
+    int channels[] = { 0 };
 
-    int iPixelNumber = pEyeImg->width * pEyeImg->height;
+    cv::Mat histogram {};
+    cv::calcHist(&eyeImg, 1, channels, {}, histogram, 1, histSize, histRanges);
 
-    int iBins = 256;
-    int pHsize[] = { iBins };
-    float fMaxValue = 0;
-    float fMinValue = 0;
+    double maxValue = 0;
+    double minValue = 0;
+    cv::minMaxLoc(histogram, &minValue, &maxValue);
 
-    float fRanges[] = { 0, (float)iBins - 1 };
-    float* pRanges[] = { fRanges };
-
-    IplImage* pImagPlanes[] = { pEyeImg };
-
-    CvHistogram* pHist = cvCreateHist(1, pHsize, CV_HIST_ARRAY, pRanges, 1);
-    cvCalcHist(pImagPlanes, pHist, 0, NULL);
-    cvGetMinMaxHistValue(pHist, &fMinValue, &fMaxValue);
-
-    for (int iX = 0; iX < pEyeImg->height; ++iX) {
-        for (int iY = 0; iY < pEyeImg->width; ++iY) {
-            int iValue = (int)cvGet2D(pEyeImg, iX, iY).val[0];
-            double fCDF = 0;
-
-            for (int i = 0; i <= iValue; ++i) {
-                double fHistValue = cvGetReal1D(&pHist->mat, i) / iPixelNumber;
-                fCDF += fHistValue;
+    const auto totalPixelCount = eyeImg.total();
+    auto passedPixelCount = 0;
+    for (auto y = 0; y < eyeImg.rows; ++y) {
+        for (auto x = 0; x < eyeImg.cols; ++x) {
+            const int value = eyeImg.at<int>(x, y);
+            double CDF = 0;
+            for (auto i = 0; i <= value; ++i) {
+                double fHistValue = histogram.at<float>(i) / totalPixelCount;
+                CDF += fHistValue;
             }
-            CvScalar s;
-            if (fCDF <= fTreshold) {
-                s.val[0] = 255;
-                ++passedPixels;
-            } else
-                s.val[0] = 0;
-
-            cvSet2D(pEyeImgOut, iX, iY, s);
+            unsigned char outPixel = 0;
+            if (CDF <= threshold) {
+                outPixel = 255;
+                ++passedPixelCount;
+            }
+            eyeImgOut.at<unsigned char>(y, x) = outPixel;
         }
     }
-
-    cvReleaseHist(&pHist);
-
-    return (double)passedPixels / (double)iPixelNumber;
+    return static_cast<double>(passedPixelCount) / passedPixelCount;
 }
 
 template <class T>
@@ -355,59 +280,54 @@ void ClearQueue(T queue)
     }
 }
 
-CvPoint CObjectDetection::DetectPupilEdge(IplImage* pEyeImg)
+CvPoint CObjectDetection::DetectPupilEdge(const cv::Mat& eyeImg)
 {
-    CvPoint cPupil;
-    cPupil.x = -1;
-    cPupil.y = -1;
+    const int thresholdX = static_cast<int>(0.25 * eyeImg.cols);
+    const int thresholdY = static_cast<int>(0.25 * eyeImg.rows);
+    int iLimitY = thresholdY;
 
-    int iLimitY = (int)(0.25 * pEyeImg->height);
-    int iThersholdX = (int)(0.25 * pEyeImg->width);
-    int iThersholdY = (int)(0.25 * pEyeImg->height);
+    const auto imageSize = cv::Size { eyeImg.cols, eyeImg.rows };
 
-    const auto imageSize = cvSize(pEyeImg->width, pEyeImg->height);
+    cv::Mat grayImg { imageSize, CV_8UC1 };
+    cv::Mat normalizedImg { imageSize, CV_8UC1 };
 
-    IplImage* pNormalized = cvCreateImage(imageSize, 8, 1);
-    IplImage* pGrayEyeImg = cvCreateImage(imageSize, 8, 1);
-    IplImage* pCannyEyeImg = cvCreateImage(imageSize, IPL_DEPTH_8U, 1);
+    cv::cvtColor(eyeImg, grayImg, cv::COLOR_BGR2GRAY);
+    cv::normalize(grayImg, normalizedImg, 0.0, 255.0, cv::NORM_MINMAX);
 
-    cvCvtColor(pEyeImg, pGrayEyeImg, CV_BGR2GRAY);
-    cvNormalize(pGrayEyeImg, pNormalized, 0, 255, CV_MINMAX);
+    cv::Mat cannyImg { imageSize, CV_8UC1 };
+    const auto avgIntensity = cv::mean(normalizedImg)[0];
+    const auto lowThreshold = avgIntensity * 1.5;
+    const auto highThreshold = avgIntensity * 2.0;
 
-    int iAverageIntenisity = (int)cvAvg(pNormalized).val[0];
+    cv::Canny(normalizedImg, cannyImg, lowThreshold, highThreshold);
 
-    int iLowThreshold = (int)(iAverageIntenisity * 1.5);
-    int iHighThreshold = iAverageIntenisity * 2;
+    std::map<int, int> hIntersections;
+    std::map<int, int> vIntersections;
 
-    cvCanny(pNormalized, pCannyEyeImg, iLowThreshold, iHighThreshold);
-
-    std::map<int, int> mHIntersections;
-    std::map<int, int> mVIntersections;
-
-    for (int x = 0; x < pCannyEyeImg->width; ++x)
-        for (int y = 0; y < pCannyEyeImg->height; ++y) {
+    for (auto x = 0; x < cannyImg.cols; ++x)
+        for (auto y = 0; y < cannyImg.rows; ++y) {
             if (y > iLimitY)
-
-                if (fabs(cvGet2D(pCannyEyeImg, y, x).val[0]) > 0.0) {
-                    if (mVIntersections.find(x) == mVIntersections.end()) {
-                        mVIntersections.emplace(x, 1);
+                if (cannyImg.at<unsigned char>(y, x) != 0) {
+                    if (vIntersections.find(x) == vIntersections.end()) {
+                        hIntersections.emplace(x, 1);
                     } else
-                        mVIntersections[x] = mVIntersections[x] + 1;
+                        vIntersections[x] = vIntersections[x] + 1;
                 }
         }
-    for (int y = 0; y < pCannyEyeImg->height; ++y)
-        for (int x = 0; x < pCannyEyeImg->width; ++x) {
+    for (auto y = 0; y < cannyImg.rows; ++y)
+        for (auto x = 0; x < cannyImg.cols; ++x) {
             if (y > iLimitY)
-                if (fabs(cvGet2D(pCannyEyeImg, y, x).val[0]) > 0.0) {
-                    if (mHIntersections.find(y) == mHIntersections.end()) {
-                        mHIntersections.emplace(y, 1);
+                if (cannyImg.at<unsigned char>(y, x) != 0) {
+                    if (hIntersections.find(y) == hIntersections.end()) {
+                        hIntersections.emplace(y, 1);
                     } else
-                        mHIntersections[y] = mHIntersections[y] + 1;
+                        hIntersections[y] = hIntersections[y] + 1;
                 }
         }
 
-    t_queue qHorizontal(mHIntersections.begin(), mHIntersections.end());
-    t_queue qVertical(mVIntersections.begin(), mVIntersections.end());
+    t_queue qVertical(vIntersections.begin(), vIntersections.end());
+    t_queue qHorizontal(hIntersections.begin(), hIntersections.end());
+  
 
     int xBorder1 = 0, xBorder2 = 0;
     int yBorder1 = 0, yBorder2 = 0;
@@ -420,7 +340,7 @@ CvPoint CObjectDetection::DetectPupilEdge(IplImage* pEyeImg)
     while (!qVertical.empty()) {
 
         xBorder2 = qVertical.top().first;
-        if (abs(xBorder2 - xBorder1) > iThersholdX)
+        if (abs(xBorder2 - xBorder1) > thresholdX)
             break;
         qVertical.pop();
     }
@@ -433,13 +353,13 @@ CvPoint CObjectDetection::DetectPupilEdge(IplImage* pEyeImg)
     while (!qHorizontal.empty()) {
         yBorder2 = qHorizontal.top().first;
 
-        if (abs(yBorder2 - yBorder1) > iThersholdY)
+        if (abs(yBorder2 - yBorder1) > thresholdY)
             break;
         qHorizontal.pop();
     }
-
-    cPupil.x = (xBorder1 + xBorder2) / 2;
-    cPupil.y = (yBorder1 + yBorder2) / 2;
+    cv::Point pupil {};
+    pupil.x = (xBorder1 + xBorder2) / 2;
+    pupil.y = (yBorder1 + yBorder2) / 2;
 
 #ifdef DEBUG
 
@@ -470,24 +390,18 @@ CvPoint CObjectDetection::DetectPupilEdge(IplImage* pEyeImg)
     cvReleaseImage(&pCannyDispl);
 #endif
 
-    cvReleaseImage(&pGrayEyeImg);
-    cvReleaseImage(&pCannyEyeImg);
-    cvReleaseImage(&pNormalized);
-    return cPupil;
+    return pupil;
 }
 
-CvPoint CObjectDetection::DetectPupilGPF(IplImage* pEyeImg)
+CvPoint CObjectDetection::DetectPupilGPF(const cv::Mat& eyeImg)
 {
-    double alfa = 0;
-    CvPoint cPupil;
-    cPupil.x = -1;
-    cPupil.y = -1;
+    const double alfa = 0;
+    cv::Point pupil { -1, -1 };
 
-    int iWidth = pEyeImg->width;
-    int iHeight = pEyeImg->height;
+    const auto imageSize = cv::Size { eyeImg.cols, eyeImg.rows };
 
-    int iDistLimitW = (int)(iWidth * 0.15);
-    int iDistLimitH = (int)(iWidth * 0.15);
+    int distLimitW = static_cast<int>(imageSize.width* 0.15);
+    int distLimitH = static_cast<int>(imageSize.width * 0.15);
 
     t_queue qGPFH;
     t_queue qGPFV;
@@ -496,49 +410,51 @@ CvPoint CObjectDetection::DetectPupilGPF(IplImage* pEyeImg)
     IplImage* pDisplay2 = cvCreateImage(cvSize(250, 150), 8, 1);
     IplImage* pDisplay3 = cvCreateImage(cvSize(250, 150), 8, 1);
 #endif
-    const auto imageSize = cvSize(pEyeImg->width, pEyeImg->height);
-    IplImage* pGrayEyeImg = cvCreateImage(imageSize, 8, 1);
-    IplImage* pGrayEyeImgH = cvCreateImage(imageSize, 8, 1);
-    IplImage* pGrayEyeImgV = cvCreateImage(imageSize, 8, 1);
-    cvCvtColor(pEyeImg, pGrayEyeImg, CV_BGR2GRAY);
-    cvCvtColor(pEyeImg, pGrayEyeImgH, CV_BGR2GRAY);
-    cvCvtColor(pEyeImg, pGrayEyeImgV, CV_BGR2GRAY);
+   
+    cv::Mat grayImg { imageSize, CV_8UC1 };
+    cv::cvtColor(eyeImg, grayImg, cv::COLOR_BGR2GRAY);
 
-    CvPoint cLastPoint;
-    CvPoint cNextPoint;
-    CvPoint cLastPointDer;
-    CvPoint cNextPointDer;
+    cv::Mat grayImgH = grayImg.clone();
+    cv::Mat grayImgV = grayImg.clone();
 
-    double dGPFH = 0;
-    double dDerGPFH = 0;
-    double dPrevDerGPFH = 0;
+    struct {
+        cv::Point lastPoint {};
+        cv::Point nextPoint {};
+        cv::Point lastPointDer {};
+        cv::Point nextPointDer {};
+    } H,V;
 
-    int iYLimit = (int)(iHeight * 0.25);
-    int iYLimit2 = (int)(iHeight * 0.8);
 
-    for (int y = 0; y < iHeight; ++y) {
-        double dNextGPFH = GPFH(pGrayEyeImg, y, 0, iWidth - 1, alfa);
+    double currentGPFH = 0;
+    double derGPFH = 0;
+    double prevDerGPFH = 0;
+
+    const int yLimit =  static_cast<int>(imageSize.height * 0.25);
+    const int yLimit2 = static_cast<int>(imageSize.height * 0.8);
+
+    for (int y = 0; y < imageSize.height; ++y) {
+        const double nextGPFH = GPFH(grayImg, y, 0, imageSize.height - 1, alfa);
         if (y > 0) {
-            dDerGPFH = dNextGPFH - dGPFH;
-            double absDerH = abs(dDerGPFH);
-            cNextPointDer.x = (int)(absDerH * 0.4);
-            cNextPointDer.y = y;
+            derGPFH = nextGPFH - currentGPFH;
+            const double absDerH = abs(derGPFH);
+            H.nextPointDer.x = static_cast<int>(absDerH * 0.4);
+            H.nextPointDer.y = y;
 
             if (y > 1)
-                cvDrawLine(pGrayEyeImgH, cLastPointDer, cNextPointDer, cvScalar(255), 1, 8, 0);
+                cv::line(grayImgH, H.lastPointDer, H.nextPointDer, { 255 }, 1, 8);
+    
+            prevDerGPFH = derGPFH;
 
-            dPrevDerGPFH = dDerGPFH;
-
-            if (y > iYLimit && y < iYLimit2)
+            if (y > yLimit && y < yLimit2)
                 qGPFH.push(t_data(y, absDerH));
 
-            cLastPointDer = cNextPointDer;
+            H.lastPointDer = H.nextPointDer;
         }
 
-        cNextPoint.x = iWidth - 1 - (int)(dNextGPFH * 0.05);
-        cNextPoint.y = y;
+        H.nextPoint.x = imageSize.width - 1 - static_cast<int>(nextGPFH * 0.05);
+        H.nextPoint.y = y;
 
-        dGPFH = dNextGPFH;
+        currentGPFH = nextGPFH;
 
         if (y > 0) {
             cvDrawLine(pGrayEyeImgH, cNextPoint, cLastPoint, cvScalar(0), 1, 8, 0);

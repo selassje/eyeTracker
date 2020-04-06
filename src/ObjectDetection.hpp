@@ -32,32 +32,30 @@ SOFTWARE.
 
 class CObjectDetection {
 public:
-    static std::optional<cv::Rect> DetectFace(IplImage* img);
-    static void DetectEyes(IplImage* img, const cv::Rect& face, CvRect* pLeftEye, CvRect* pRightEye);
-    static CvPoint DetectPupilCDF(IplImage* pEyeImg);
-    static CvPoint DetectPupilGPF(IplImage* pEyeImg);
-    static CvPoint DetectPupilEdge(IplImage* pEyeImg);
-    static BOOL DetectLeftBlink(IplImage* pEyeImg, size_t iLastFramesNumber, int iVarrianceThreshold, double dRatioThreshold, BOOL bReset = FALSE);
-    static BOOL DetectRightBlink(IplImage* pEyeImg, size_t iLastFramesNumber, int iVarrianceThreshold, double dRatioThreshold, BOOL bReset = FALSE);
-    static void Clear();
+    static std::optional<cv::Rect> DetectFace(const cv::Mat &img);
+    static void DetectEyes(const cv::Mat& img, const cv::Rect& face, cv::Rect& leftEye, cv::Rect& rightEye);
+    static cv::Point DetectPupilCDF(const cv::Mat &eyeImg);
+    static CvPoint DetectPupilGPF(const cv::Mat &eyeImg);
+    static CvPoint DetectPupilEdge(const cv::Mat &eyeImg);
+    static BOOL DetectLeftBlink(const cv::Mat &eyeImg, size_t iLastFramesNumber, int iVarrianceThreshold, double dRatioThreshold, BOOL bReset = FALSE);
+    static BOOL DetectRightBlink(const cv::Mat &eyeImg, size_t iLastFramesNumber, int iVarrianceThreshold, double dRatioThreshold, BOOL bReset = FALSE);
     static void Init();
 
 private:
-    static double CFDThreshold(IplImage* pEyeImg, IplImage* pEyeImgOut, double fTreshold);
+    static double CFDThreshold(const cv::Mat& eyeImg, cv::Mat& eyeImgOut, const double threshold);
     inline static cv::CascadeClassifier m_pFacesCascade {};
     inline static cv::CascadeClassifier m_pEyesCascade {};
-    static CvMemStorage* m_pStorage;
 
-    static BOOL DetectBlink(IplImage* pEyeImg, size_t iLastFramesNumber,
-        int iVarrianceThreshold, double dRatioThreshold, CvMat*& pMeanMap,
-        CvMat*& pVarrianceMap, std::deque<IplImage*>& qFrames, BOOL bReset = FALSE);
-    static double IPFH(IplImage* pImg, int iY, int iX1, int iX2);
-    static double VPFH(IplImage* pImg, double dIPF, int iY, int iX1, int iX2);
-    static double GPFH(IplImage* pImg, int iY, int iX1, int iX2, double dAlfa);
+    static BOOL DetectBlink(const cv::Mat& eyeImg, size_t lastFramesNumber,
+        int varrianceThreshold, double ratioThreshold, const cv::Mat*& pMeanMap,
+        const cv::Mat*& pVarrianceMap, std::deque<const cv::Mat&>& qFrames, BOOL bReset = FALSE);
+    static double IPFH(const cv::Mat &img, int y, int x1, int x2);
+    static double VPFH(const cv::Mat &img, double IPF, int y, int x1, int x2);
+    static double GPFH(const cv::Mat &img, int y, int x1, int x2, double alfa);
 
-    static double IPFV(IplImage* pImg, int iX, int iY1, int iY2);
-    static double VPFV(IplImage* pImg, double dIPF, int iX, int iY1, int iY2);
-    static double GPFV(IplImage* pImg, int iX, int iY1, int iY2, double dAlfa);
+    static double IPFV(const cv::Mat& img, int x, int y1, int y2);
+    static double VPFV(const cv::Mat& img, double dIPF, int x, int y1, int y2);
+    static double GPFV(const cv::Mat& img, int x, int y, int y2, double alfa);
 };
 
 #endif
