@@ -32,13 +32,13 @@ SOFTWARE.
 
 class CObjectDetection {
 public:
-    static std::optional<cv::Rect> DetectFace(const cv::Mat &img);
+    static std::optional<cv::Rect> DetectFace(const cv::Mat& img);
     static void DetectEyes(const cv::Mat& img, const cv::Rect& face, cv::Rect& leftEye, cv::Rect& rightEye);
-    static cv::Point DetectPupilCDF(const cv::Mat &eyeImg);
-    static CvPoint DetectPupilGPF(const cv::Mat &eyeImg);
-    static CvPoint DetectPupilEdge(const cv::Mat &eyeImg);
-    static BOOL DetectLeftBlink(const cv::Mat &eyeImg, size_t iLastFramesNumber, int iVarrianceThreshold, double dRatioThreshold, BOOL bReset = FALSE);
-    static BOOL DetectRightBlink(const cv::Mat &eyeImg, size_t iLastFramesNumber, int iVarrianceThreshold, double dRatioThreshold, BOOL bReset = FALSE);
+    static cv::Point DetectPupilCDF(const cv::Mat& eyeImg);
+    static CvPoint DetectPupilGPF(const cv::Mat& eyeImg);
+    static CvPoint DetectPupilEdge(const cv::Mat& eyeImg);
+    static BOOL DetectLeftBlink(const cv::Mat& eyeImg, const size_t lastFramesNumber, const int varrianceThreshold, const double ratioThreshold, bool reset = false);
+    static BOOL DetectRightBlink(const cv::Mat& eyeImg, const size_t lastFramesNumber, const int varrianceThreshold, const double ratioThreshold, bool reset = false);
     static void Init();
 
 private:
@@ -46,12 +46,18 @@ private:
     inline static cv::CascadeClassifier m_pFacesCascade {};
     inline static cv::CascadeClassifier m_pEyesCascade {};
 
-    static BOOL DetectBlink(const cv::Mat& eyeImg, size_t lastFramesNumber,
-        int varrianceThreshold, double ratioThreshold, const cv::Mat*& pMeanMap,
-        const cv::Mat*& pVarrianceMap, std::deque<const cv::Mat&>& qFrames, BOOL bReset = FALSE);
-    static double IPFH(const cv::Mat &img, int y, int x1, int x2);
-    static double VPFH(const cv::Mat &img, double IPF, int y, int x1, int x2);
-    static double GPFH(const cv::Mat &img, int y, int x1, int x2, double alfa);
+    static bool DetectBlink(const cv::Mat& eyeImg,
+        const size_t lastFramesNumber,
+        int varrianceThreshold,
+        const double ratioThreshold,
+        cv::Mat& meanMap,
+        cv::Mat& varrianceMap,
+        std::deque<cv::Mat>& framesQueue,
+        bool reset = false);
+
+    static double IPFH(const cv::Mat& img, int y, int x1, int x2);
+    static double VPFH(const cv::Mat& img, double IPF, int y, int x1, int x2);
+    static double GPFH(const cv::Mat& img, int y, int x1, int x2, double alfa);
 
     static double IPFV(const cv::Mat& img, int x, int y1, int y2);
     static double VPFV(const cv::Mat& img, double dIPF, int x, int y1, int y2);

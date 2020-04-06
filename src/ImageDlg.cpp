@@ -284,17 +284,17 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
         return cvDrawLine(image, point1, point2, color, Thickness, LineType, Shift);
     };
 
-    auto pFace = CObjectDetection::DetectFace(pImg);
+    auto pFace = CObjectDetection::DetectFace(cv::cvarrToMat(pImg));
     if (pFace) {
-        CvRect cLeftEye;
+        cv::Rect cLeftEye;
         cLeftEye.x = -1;
         cLeftEye.y = -1;
 
-        CvRect cRightEye;
+        cv::Rect cRightEye;
         cRightEye.x = -1;
         cRightEye.y = -1;
 
-        CObjectDetection::DetectEyes(pImg, *pFace, &cLeftEye, &cRightEye);
+        CObjectDetection::DetectEyes(cv::cvarrToMat(pImg), *pFace, cLeftEye, cRightEye);
 
         if (cLeftEye.x != -1) {
             *pLeftEye = cvCreateImage(cvSize(cLeftEye.width, cLeftEye.height), pImg->depth, pImg->nChannels);
@@ -321,13 +321,13 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
             cPupilGPF.y = -1;
 
             if (IsDlgButtonChecked(IDC_CDF)) {
-                cPupilCDF = CObjectDetection::DetectPupilCDF(*pLeftEye);
+                cPupilCDF = CObjectDetection::DetectPupilCDF(cv::cvarrToMat(*pLeftEye));
             }
             if (IsDlgButtonChecked(IDC_EDGE)) {
-                cPupilEdge = CObjectDetection::DetectPupilEdge(*pLeftEye);
+                cPupilEdge = CObjectDetection::DetectPupilEdge(cv::cvarrToMat(*pLeftEye));
             }
             if (IsDlgButtonChecked(IDC_GPF)) {
-                cPupilGPF = CObjectDetection::DetectPupilGPF(*pLeftEye);
+                cPupilGPF = CObjectDetection::DetectPupilGPF(cv::cvarrToMat(*pLeftEye));
             }
 
             if (IsDlgButtonChecked(IDC_CDF)) {
@@ -375,13 +375,13 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
             cPupilEdge.y = -1;
 
             if (IsDlgButtonChecked(IDC_CDF)) {
-                cPupilCDF = CObjectDetection::DetectPupilCDF(*pRightEye);
+                cPupilCDF = CObjectDetection::DetectPupilCDF(cv::cvarrToMat(*pRightEye));
             }
             if (IsDlgButtonChecked(IDC_EDGE)) {
-                cPupilEdge = CObjectDetection::DetectPupilEdge(*pRightEye);
+                cPupilEdge = CObjectDetection::DetectPupilEdge(cv::cvarrToMat(*pRightEye));
             }
             if (IsDlgButtonChecked(IDC_GPF)) {
-                cPupilGPF = CObjectDetection::DetectPupilGPF(*pRightEye);
+                cPupilGPF = CObjectDetection::DetectPupilGPF(cv::cvarrToMat(*pRightEye));
             }
             if (IsDlgButtonChecked(IDC_CDF)) {
                 drawPoint(*pRightEye, cvPoint(cPupilCDF.x, cPupilCDF.y), CVCOLORS::RED);
@@ -420,14 +420,14 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
         CvPoint cPupilGPF;
 
         if (IsDlgButtonChecked(IDC_CDF)) {
-            cPupilCDF = CObjectDetection::DetectPupilCDF(*pLeftEye);
+            cPupilCDF = CObjectDetection::DetectPupilCDF(cv::cvarrToMat(*pLeftEye));
         }
         if (IsDlgButtonChecked(IDC_EDGE)) {
-            cPupilEdge = CObjectDetection::DetectPupilEdge(*pLeftEye);
+            cPupilEdge = CObjectDetection::DetectPupilEdge(cv::cvarrToMat(*pLeftEye));
         }
 
         if (IsDlgButtonChecked(IDC_GPF)) {
-            cPupilGPF = CObjectDetection::DetectPupilGPF(*pLeftEye);
+            cPupilGPF = CObjectDetection::DetectPupilGPF(cv::cvarrToMat(*pLeftEye));
         }
 
         if (IsDlgButtonChecked(IDC_CDF)) {

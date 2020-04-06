@@ -174,7 +174,7 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
         BOOL bLeftEyeBlink = FALSE;
         BOOL bRightEyeBlink = FALSE;
         if (m_pCurrentFrame) {
-            auto pFace = CObjectDetection::DetectFace(m_pCurrentFrame);
+            auto pFace = CObjectDetection::DetectFace(cv::cvarrToMat(m_pCurrentFrame));
             double dWidthRatio = ((double)m_iWndWidth) / m_pCurrentFrame->width;
             double dHeightRatio = ((double)m_iWndHeight) / m_pCurrentFrame->height;
             auto pDisplay = cvCreateImage(cvSize(m_iWndWidth, m_iWndHeight),
@@ -195,7 +195,6 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                 if (iFaceFrameCount % m_iAvgFaceFps) {
                     cvReleaseImage(&m_pCurrentFrame);
                     cvReleaseImage(&pDisplay);
-                    CObjectDetection::Clear();
                     return;
                 }
 
@@ -214,8 +213,8 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                 strLog.Format(L"Detected Face (x=%d y=%d width=%d height=%d)", pFace->x, pFace->y, pFace->width, pFace->height);
                 Log(strLog);
 
-                CvRect cEyeLeft {};
-                CvRect cEyeRight {};
+                cv::Rect cEyeLeft {};
+                cv::Rect cEyeRight {};
 
                 bool bAvgLeft = TRUE;
                 bool bAvgRight = TRUE;
@@ -225,7 +224,7 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
 
                         IplImage* pCurrentFrame = cvCloneImage(cvQueryFrame(m_pCapture));
 
-                        CObjectDetection::DetectEyes(pCurrentFrame, *pFace, &cEyeLeft, &cEyeRight);
+                        CObjectDetection::DetectEyes(cv::cvarrToMat(pCurrentFrame), *pFace, cEyeLeft, cEyeRight);
 
                         cvReleaseImage(&pCurrentFrame);
 
@@ -289,19 +288,19 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                     cvCopy(m_pCurrentFrame, m_pLeftEyeImg, NULL);
                     cvResetImageROI(m_pCurrentFrame);
 
-                    bLeftEyeBlink = CObjectDetection::DetectLeftBlink(m_pLeftEyeImg, static_cast<size_t>(m_iLastFramesNum), m_iVarrianceBlink, m_dRatioThreshold);
+                    bLeftEyeBlink = CObjectDetection::DetectLeftBlink(cv::cvarrToMat(m_pLeftEyeImg), static_cast<size_t>(m_iLastFramesNum), m_iVarrianceBlink, m_dRatioThreshold);
 
                     CvPoint cPupilCenter;
 
                     switch (m_iSelectedAlg) {
                     case 0:
-                        cPupilCenter = CObjectDetection::DetectPupilCDF(m_pLeftEyeImg);
+                        cPupilCenter = CObjectDetection::DetectPupilCDF(cv::cvarrToMat(m_pLeftEyeImg));
                         break;
                     case 1:
-                        cPupilCenter = CObjectDetection::DetectPupilEdge(m_pLeftEyeImg);
+                        cPupilCenter = CObjectDetection::DetectPupilEdge(cv::cvarrToMat(m_pLeftEyeImg));
                         break;
                     case 2:
-                        cPupilCenter = CObjectDetection::DetectPupilGPF(m_pLeftEyeImg);
+                        cPupilCenter = CObjectDetection::DetectPupilGPF(cv::cvarrToMat(m_pLeftEyeImg));
                         break;
                     }
 
@@ -346,19 +345,19 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                     strLog.Format(L"Detected Right Eye (x=%d y=%d width=%d height=%d)", cEyeRight.x, cEyeRight.y, cEyeRight.width, cEyeRight.height);
                     Log(strLog);
 
-                    bRightEyeBlink = CObjectDetection::DetectRightBlink(m_pRightEyeImg, static_cast<size_t>(m_iLastFramesNum), m_iVarrianceBlink, m_dRatioThreshold2);
+                    bRightEyeBlink = CObjectDetection::DetectRightBlink(cv::cvarrToMat(m_pRightEyeImg), static_cast<size_t>(m_iLastFramesNum), m_iVarrianceBlink, m_dRatioThreshold2);
 
                     CvPoint cPupilCenter;
 
                     switch (m_iSelectedAlg) {
                     case 0:
-                        cPupilCenter = CObjectDetection::DetectPupilCDF(m_pRightEyeImg);
+                        cPupilCenter = CObjectDetection::DetectPupilCDF(cv::cvarrToMat(m_pRightEyeImg));
                         break;
                     case 1:
-                        cPupilCenter = CObjectDetection::DetectPupilEdge(m_pRightEyeImg);
+                        cPupilCenter = CObjectDetection::DetectPupilEdge(cv::cvarrToMat(m_pRightEyeImg));
                         break;
                     case 2:
-                        cPupilCenter = CObjectDetection::DetectPupilGPF(m_pRightEyeImg);
+                        cPupilCenter = CObjectDetection::DetectPupilGPF(cv::cvarrToMat(m_pRightEyeImg));
                         break;
                     }
                     cPupilRight.x = cPupilCenter.x + cEyeRight.x;
@@ -516,7 +515,6 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
 
             cvShowImage(DISPLAY_WINDOW, pDisplay);
             cvReleaseImage(&pDisplay);
-            CObjectDetection::Clear();
             int iNewTick = GetTickCount();
             if (m_iTickCount) {
                 int iTickDiff = iNewTick - m_iTickCount;
@@ -696,6 +694,6 @@ BOOL CCameraDlg::PreTranslateMessage(MSG* pMsg)
 
 void CCameraDlg::ResetEyeBlinks()
 {
-    CObjectDetection::DetectLeftBlink(m_pLeftEyeImg, static_cast<size_t>(m_iLastFramesNum), m_iVarrianceBlink, m_dRatioThreshold, TRUE);
-    CObjectDetection::DetectRightBlink(m_pLeftEyeImg, static_cast<size_t>(m_iLastFramesNum), m_iVarrianceBlink, m_dRatioThreshold, TRUE);
+    CObjectDetection::DetectLeftBlink(cv::cvarrToMat(m_pLeftEyeImg), static_cast<size_t>(m_iLastFramesNum), m_iVarrianceBlink, m_dRatioThreshold, true);
+    CObjectDetection::DetectRightBlink(cv::cvarrToMat(m_pRightEyeImg), static_cast<size_t>(m_iLastFramesNum), m_iVarrianceBlink, m_dRatioThreshold, true);
 }

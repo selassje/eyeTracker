@@ -148,12 +148,12 @@ void CComparerDlg::OnBnClickedButton2()
             if (pImage) {
                 ++m_iImgCount;
 
-                auto pFace = CObjectDetection::DetectFace(pImage);
+                auto pFace = CObjectDetection::DetectFace(cv::cvarrToMat(pImage));
                 if (pFace) {
                     ++m_iFaceCount;
 
-                    CvRect cLeftEye;
-                    CvRect cRightEye;
+                    cv::Rect cLeftEye;
+                    cv::Rect cRightEye;
 
                     CvPoint cLeftPupilCDF;
                     CvPoint cRightPupilCDF;
@@ -179,18 +179,18 @@ void CComparerDlg::OnBnClickedButton2()
                     cRightPupilGPF.x = -1;
                     cRightPupilGPF.y = -1;
 
-                    CObjectDetection::DetectEyes(pImage, *pFace, &cLeftEye, &cRightEye);
+                    CObjectDetection::DetectEyes(cv::cvarrToMat(pImage), *pFace, cLeftEye, cRightEye);
 
-                    if (cLeftEye.x != -1) {
+                    if (!cLeftEye.empty()) {
                         IplImage* pLeftEyeImg = cvCreateImage(cvSize(cLeftEye.width, cLeftEye.height), pImage->depth, pImage->nChannels);
                         cvSetImageROI(pImage,
                             cvRect(cLeftEye.x, cLeftEye.y, cLeftEye.width, cLeftEye.height));
                         cvCopy(pImage, pLeftEyeImg, NULL);
                         cvResetImageROI(pImage);
 
-                        cLeftPupilCDF = CObjectDetection::DetectPupilCDF(pLeftEyeImg);
-                        cLeftPupilEdge = CObjectDetection::DetectPupilEdge(pLeftEyeImg);
-                        cLeftPupilGPF = CObjectDetection::DetectPupilGPF(pLeftEyeImg);
+                        cLeftPupilCDF = CObjectDetection::DetectPupilCDF(cv::cvarrToMat(pLeftEyeImg));
+                        cLeftPupilEdge = CObjectDetection::DetectPupilEdge(cv::cvarrToMat(pLeftEyeImg));
+                        cLeftPupilGPF = CObjectDetection::DetectPupilGPF(cv::cvarrToMat(pLeftEyeImg));
 
                         cLeftPupilCDF.x += cLeftEye.x;
                         cLeftPupilCDF.y += cLeftEye.y;
@@ -204,16 +204,16 @@ void CComparerDlg::OnBnClickedButton2()
                         cvReleaseImage(&pLeftEyeImg);
                     }
 
-                    if (cRightEye.x != -1) {
+                    if (!cRightEye.empty()) {
                         IplImage* pRightEyeImg = cvCreateImage(cvSize(cRightEye.width, cRightEye.height), pImage->depth, pImage->nChannels);
                         cvSetImageROI(pImage,
                             cvRect(cRightEye.x, cRightEye.y, cRightEye.width, cRightEye.height));
                         cvCopy(pImage, pRightEyeImg, NULL);
                         cvResetImageROI(pImage);
 
-                        cRightPupilCDF = CObjectDetection::DetectPupilCDF(pRightEyeImg);
-                        cRightPupilEdge = CObjectDetection::DetectPupilEdge(pRightEyeImg);
-                        cRightPupilGPF = CObjectDetection::DetectPupilGPF(pRightEyeImg);
+                        cRightPupilCDF = CObjectDetection::DetectPupilCDF(cv::cvarrToMat(pRightEyeImg));
+                        cRightPupilEdge = CObjectDetection::DetectPupilEdge(cv::cvarrToMat(pRightEyeImg));
+                        cRightPupilGPF = CObjectDetection::DetectPupilGPF(cv::cvarrToMat(pRightEyeImg));
 
                         cRightPupilCDF.x += cRightEye.x;
                         cRightPupilCDF.y += cRightEye.y;
@@ -227,7 +227,7 @@ void CComparerDlg::OnBnClickedButton2()
                         cvReleaseImage(&pRightEyeImg);
                     }
 
-                    if (cRightEye.x != -1 && cLeftEye.x != -1) {
+                    if (!cLeftEye.empty() && !cRightEye.empty()) {
                         ++m_iEyesCount;
                         double dErrorCDF = cBioIDPos.Error(cLeftPupilCDF, cRightPupilCDF);
                         double dErrorEdge = cBioIDPos.Error(cLeftPupilEdge, cRightPupilEdge);
@@ -268,7 +268,6 @@ void CComparerDlg::OnBnClickedButton2()
                 }
 
                 cvReleaseImage(&pImage);
-                CObjectDetection::Clear();
             }
         }
 
