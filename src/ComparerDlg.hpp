@@ -36,15 +36,15 @@ class CComparerDlg : public CDialogEx {
     DECLARE_DYNAMIC(CComparerDlg)
 
 private:
-    int m_iImgCount {};
-    int m_iFaceCount {};
-    int m_iEyesCount {};
-    int m_iPointsNumber {};
-    double m_dErrorThreshold {};
-    std::vector<CString> m_lImages;
-    std::map<double, double> m_CDFPoints;
-    std::map<double, double> m_EdgePoints;
-    std::map<double, double> m_GPFPoints;
+    int mImgCount {};
+    int mFaceCount {};
+    int mEyesCount {};
+    int mPointsNumber {};
+    double mErrorThreshold {};
+    std::vector<CString> mImagePaths;
+    std::map<double, double> mCDFPoints;
+    std::map<double, double> mEdgePoints;
+    std::map<double, double> mGPFPoints;
 
     void Plot(void);
     void SetupGraph(void);
@@ -53,8 +53,8 @@ public:
     CComparerDlg(CWnd* pParent = NULL);
     virtual ~CComparerDlg();
     enum { IDD = IDD_COMPARER };
-    CGraph m_cGraph;
-    CProgressCtrl m_cProgCtrl;
+    CGraph mGraph;
+    CProgressCtrl mProgCtrl;
 
     virtual BOOL OnInitDialog();
     afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
@@ -77,20 +77,20 @@ class SBioIDEyeCenters : public CObject {
 public:
     void Serialize(CArchive& ar);
 
-    double Error(CvPoint cLeftEyeEst, CvPoint cRightEyeEst)
+    double Error(cv::Point leftEyeEst, cv::Point rightEyeEst)
     {
-        double dRealDist = Distance(cLeftEye, cRightEye);
-        double dMaxEstDist = MAX(Distance(cLeftEye, cLeftEyeEst), Distance(cRightEye, cRightEyeEst));
-        return dMaxEstDist / dRealDist;
+        double realDist = Distance(leftEye, rightEye);
+        double maxEstDist = MAX(Distance(leftEye, leftEyeEst), Distance(rightEye, rightEyeEst));
+        return maxEstDist / realDist;
     }
 
 private:
-    CvPoint cLeftEye;
-    CvPoint cRightEye;
+    cv::Point leftEye;
+    cv::Point rightEye;
 
-    double Distance(CvPoint p1, CvPoint p2)
+    double Distance(cv::Point p1, cv::Point p2)
     {
-        return std::sqrt((double)((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y)));
+        return std::sqrt(static_cast<double>((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y)));
     }
 };
 

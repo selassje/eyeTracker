@@ -25,7 +25,7 @@ SOFTWARE.
 #include "ComparerDlg.hpp"
 #include "EyeTracker.hpp"
 #include "ObjectDetection.hpp"
-#include "opencv2/imgcodecs/imgcodecs_c.h"
+#include "opencv2/imgcodecs.hpp"
 
 
 #define DEF_MAXTHRESHOLD 0.25
@@ -45,8 +45,8 @@ CComparerDlg::~CComparerDlg()
 void CComparerDlg::DoDataExchange(CDataExchange* pDX)
 {
     CDialogEx::DoDataExchange(pDX);
-    DDX_Control(pDX, IDC_GRAPH, m_cGraph);
-    DDX_Control(pDX, IDC_PROGR, m_cProgCtrl);
+    DDX_Control(pDX, IDC_GRAPH, mGraph);
+    DDX_Control(pDX, IDC_PROGR, mProgCtrl);
 }
 
 BEGIN_MESSAGE_MAP(CComparerDlg, CDialogEx)
@@ -66,26 +66,25 @@ void CComparerDlg::OnBnClickedButton1()
     fileDlg.GetOFN().lpstrFile = strBuffer.GetBuffer(MAX_FILES * (_MAX_PATH + 1) + 1);
     fileDlg.GetOFN().nMaxFile = MAX_FILES * (_MAX_PATH + 1) + 1;
     if (fileDlg.DoModal() == IDOK) {
-        m_lImages.clear();
-        m_cGraph.ClearGraph();
-        m_CDFPoints.clear();
-        m_EdgePoints.clear();
-        m_GPFPoints.clear();
+        mImagePaths.clear();
+        mGraph.ClearGraph();
+        mCDFPoints.clear();
+        mEdgePoints.clear();
+        mGPFPoints.clear();
 
         POSITION position = fileDlg.GetStartPosition();
 
         while (position) {
+
             CString strSelectedPath = fileDlg.GetNextPathName(position);
             CStringA ansiPath(strSelectedPath);
+            auto img = cv::imread(static_cast<const char*>(ansiPath));
 
-            IplImage* pImg = cvLoadImage(ansiPath);
-
-            if (pImg) {
-                m_lImages.push_back(strSelectedPath);
-                cvReleaseImage(&pImg);
+            if (!img.empty()) {
+                mImagePaths.push_back(strSelectedPath);
             }
         }
-        auto iImgCount = m_lImages.size();
+        auto iImgCount = mImagePaths.size();
 
         CString strImgCount;
         if (iImgCount == 0) {
@@ -101,35 +100,35 @@ void CComparerDlg::OnBnClickedButton1()
 
 void CComparerDlg::OnBnClickedButton2()
 {
-    m_CDFPoints.clear();
-    m_EdgePoints.clear();
-    m_GPFPoints.clear();
-    m_iImgCount = 0;
-    m_iFaceCount = 0;
-    m_iEyesCount = 0;
+    mCDFPoints.clear();
+    mEdgePoints.clear();
+    mGPFPoints.clear();
+    mImgCount = 0;
+    mFaceCount = 0;
+    mEyesCount = 0;
 
-    m_dErrorThreshold = GetDlgItemDouble(this, IDC_THRESH);
-    if (m_dErrorThreshold > 1 || m_dErrorThreshold <= 0) {
-        m_dErrorThreshold = DEF_MAXTHRESHOLD;
-        SetDlgItemDouble(this, IDC_THRESH, m_dErrorThreshold);
+    mErrorThreshold = GetDlgItemDouble(this, IDC_THRESH);
+    if (mErrorThreshold > 1 || mErrorThreshold <= 0) {
+        mErrorThreshold = DEF_MAXTHRESHOLD;
+        SetDlgItemDouble(this, IDC_THRESH, mErrorThreshold);
         UpdateWindow();
     }
 
-    m_iPointsNumber = GetDlgItemInt(IDC_EPOINTNUM);
-    if (m_iPointsNumber <= 0) {
-        m_iPointsNumber = DEF_POINTNUMBER;
-        SetDlgItemInt(IDC_EPOINTNUM, m_iPointsNumber);
+    mPointsNumber = GetDlgItemInt(IDC_EPOINTNUM);
+    if (mPointsNumber <= 0) {
+        mPointsNumber = DEF_POINTNUMBER;
+        SetDlgItemInt(IDC_EPOINTNUM, mPointsNumber);
         UpdateWindow();
     }
 
-    double dInterval = m_dErrorThreshold / m_iPointsNumber;
+    double dInterval = mErrorThreshold / mPointsNumber;
 
-    auto iImageCount = m_lImages.size();
+    auto iImageCount = mImagePaths.size();
 
-    m_cProgCtrl.SetRange(0, static_cast<short>(iImageCount) - 1);
+    mProgCtrl.SetRange(0, static_cast<short>(iImageCount) - 1);
     CWaitCursor cWait;
-    for (unsigned i = 0; i < static_cast<unsigned>(m_lImages.size()); ++i) {
-        CString sImgPath = m_lImages[static_cast<size_t>(i)];
+    for (unsigned i = 0; i < static_cast<unsigned>(mImagePaths.size()); ++i) {
+        CString sImgPath = mImagePaths[static_cast<size_t>(i)];
 
         int iExtPoint = sImgPath.ReverseFind('.') + 1;
         CString sEyePosPath = sImgPath.Mid(0, iExtPoint) + L"pts";
@@ -143,148 +142,120 @@ void CComparerDlg::OnBnClickedButton2()
             ar.Close();
             cEyePosFile.Close();
 
-            IplImage* pImage = cvLoadImage(CStringA(sImgPath));
+            auto img = cv::imread(static_cast<const char*>(CStringA{sImgPath}));
 
-            if (pImage) {
-                ++m_iImgCount;
+            if (!img.empty()) {
+                ++mImgCount;
 
-                auto pFace = CObjectDetection::DetectFace(cv::cvarrToMat(pImage));
-                if (pFace) {
-                    ++m_iFaceCount;
+                auto face = CObjectDetection::DetectFace(img);
+                if (face) {
+                    ++mFaceCount;
 
-                    CvPoint cLeftPupilCDF;
-                    CvPoint cRightPupilCDF;
+                    cv::Point leftPupilCDF {};
+                    cv::Point rightPupilCDF {};
+                    cv::Point leftPupilEdge;
+                    cv::Point rightPupilEdge;
+                    cv::Point leftPupilGPF;
+                    cv::Point rightPupilGPF;
 
-                    cLeftPupilCDF.x = -1;
-                    cLeftPupilCDF.y = -1;
-                    cRightPupilCDF.x = -1;
-                    cRightPupilCDF.y = -1;
+                    auto [leftEye, rightEye] = CObjectDetection::DetectEyes(img, *face);
 
-                    CvPoint cLeftPupilEdge;
-                    CvPoint cRightPupilEdge;
+                    if (!leftEye.empty()) {
 
-                    cLeftPupilEdge.x = -1;
-                    cLeftPupilEdge.y = -1;
-                    cRightPupilEdge.x = -1;
-                    cRightPupilEdge.y = -1;
+                        cv::Mat leftEyeImg{ leftEye.height, leftEye.width, img.type() };
+                        img(leftEye).copyTo(leftEyeImg);
 
-                    CvPoint cLeftPupilGPF;
-                    CvPoint cRightPupilGPF;
+                        leftPupilCDF = CObjectDetection::DetectPupilCDF(leftEyeImg);
+                        leftPupilEdge = CObjectDetection::DetectPupilEdge(leftEyeImg);
+                        leftPupilGPF = CObjectDetection::DetectPupilGPF(leftEyeImg);
 
-                    cLeftPupilGPF.x = -1;
-                    cLeftPupilGPF.y = -1;
-                    cRightPupilGPF.x = -1;
-                    cRightPupilGPF.y = -1;
+                        leftPupilCDF.x += leftEye.x;
+                        leftPupilCDF.y += leftEye.y;
 
-                    auto [cLeftEye, cRightEye] = CObjectDetection::DetectEyes(cv::cvarrToMat(pImage), *pFace);
+                        leftPupilEdge.x += leftEye.x;
+                        leftPupilEdge.y += leftEye.y;
 
-                    if (!cLeftEye.empty()) {
-                        IplImage* pLeftEyeImg = cvCreateImage(cvSize(cLeftEye.width, cLeftEye.height), pImage->depth, pImage->nChannels);
-                        cvSetImageROI(pImage,
-                            cvRect(cLeftEye.x, cLeftEye.y, cLeftEye.width, cLeftEye.height));
-                        cvCopy(pImage, pLeftEyeImg, NULL);
-                        cvResetImageROI(pImage);
-
-                        cLeftPupilCDF = CObjectDetection::DetectPupilCDF(cv::cvarrToMat(pLeftEyeImg));
-                        cLeftPupilEdge = CObjectDetection::DetectPupilEdge(cv::cvarrToMat(pLeftEyeImg));
-                        cLeftPupilGPF = CObjectDetection::DetectPupilGPF(cv::cvarrToMat(pLeftEyeImg));
-
-                        cLeftPupilCDF.x += cLeftEye.x;
-                        cLeftPupilCDF.y += cLeftEye.y;
-
-                        cLeftPupilEdge.x += cLeftEye.x;
-                        cLeftPupilEdge.y += cLeftEye.y;
-
-                        cLeftPupilGPF.x += cLeftEye.x;
-                        cLeftPupilGPF.y += cLeftEye.y;
-
-                        cvReleaseImage(&pLeftEyeImg);
+                        leftPupilGPF.x += leftEye.x;
+                        leftPupilGPF.y += leftEye.y;
                     }
 
-                    if (!cRightEye.empty()) {
-                        IplImage* pRightEyeImg = cvCreateImage(cvSize(cRightEye.width, cRightEye.height), pImage->depth, pImage->nChannels);
-                        cvSetImageROI(pImage,
-                            cvRect(cRightEye.x, cRightEye.y, cRightEye.width, cRightEye.height));
-                        cvCopy(pImage, pRightEyeImg, NULL);
-                        cvResetImageROI(pImage);
+                    if (!rightEye.empty()) {
+                        cv::Mat rightEyeImg { rightEye.height, rightEye.width, img.type() };
+                        img(rightEye).copyTo(rightEyeImg);
 
-                        cRightPupilCDF = CObjectDetection::DetectPupilCDF(cv::cvarrToMat(pRightEyeImg));
-                        cRightPupilEdge = CObjectDetection::DetectPupilEdge(cv::cvarrToMat(pRightEyeImg));
-                        cRightPupilGPF = CObjectDetection::DetectPupilGPF(cv::cvarrToMat(pRightEyeImg));
+                        rightPupilCDF = CObjectDetection::DetectPupilCDF(rightEyeImg);
+                        rightPupilEdge = CObjectDetection::DetectPupilEdge(rightEyeImg);
+                        rightPupilGPF = CObjectDetection::DetectPupilGPF(rightEyeImg);
 
-                        cRightPupilCDF.x += cRightEye.x;
-                        cRightPupilCDF.y += cRightEye.y;
+                        rightPupilCDF.x += rightEye.x;
+                        rightPupilCDF.y += rightEye.y;
 
-                        cRightPupilEdge.x += cRightEye.x;
-                        cRightPupilEdge.y += cRightEye.y;
+                        rightPupilEdge.x += rightEye.x;
+                        rightPupilEdge.y += rightEye.y;
 
-                        cRightPupilGPF.x += cRightEye.x;
-                        cRightPupilGPF.y += cRightEye.y;
-
-                        cvReleaseImage(&pRightEyeImg);
+                        rightPupilGPF.x += rightEye.x;
+                        rightPupilGPF.y += rightEye.y;
                     }
 
-                    if (!cLeftEye.empty() && !cRightEye.empty()) {
-                        ++m_iEyesCount;
-                        double dErrorCDF = cBioIDPos.Error(cLeftPupilCDF, cRightPupilCDF);
-                        double dErrorEdge = cBioIDPos.Error(cLeftPupilEdge, cRightPupilEdge);
-                        double dErrorGPF = cBioIDPos.Error(cLeftPupilGPF, cRightPupilGPF);
-                        for (double dMaxError = 0; dMaxError <= m_dErrorThreshold; dMaxError += dInterval) { //-V1034
+                    if (!leftEye.empty() && !rightEye.empty()) {
+                        ++mEyesCount;
+                        double errorCDF = cBioIDPos.Error(leftPupilCDF, rightPupilCDF);
+                        double errorEdge = cBioIDPos.Error(leftPupilEdge, rightPupilEdge);
+                        double errorGPF = cBioIDPos.Error(leftPupilGPF, rightPupilGPF);
+                        for (double maxError = 0; maxError <= mErrorThreshold; maxError += dInterval) { //-V1034
 
-                            if (dErrorCDF < dMaxError) {
-                                if (m_CDFPoints.find(dMaxError) == m_CDFPoints.end())
-                                    m_CDFPoints.emplace(dMaxError, 1.);
+                            if (errorCDF < maxError) {
+                                if (mCDFPoints.find(maxError) == mCDFPoints.end())
+                                    mCDFPoints.emplace(maxError, 1.);
                                 else
-                                    m_CDFPoints[dMaxError] += 1;
+                                    mCDFPoints[maxError] += 1;
                             }
 
-                            else if (m_CDFPoints.find(dMaxError) == m_CDFPoints.end())
-                                m_CDFPoints.emplace(dMaxError, 0);
+                            else if (mCDFPoints.find(maxError) == mCDFPoints.end())
+                                mCDFPoints.emplace(maxError, 0);
 
-                            if (dErrorEdge < dMaxError) {
-                                if (m_EdgePoints.find(dMaxError) == m_EdgePoints.end())
-                                    m_EdgePoints.emplace(dMaxError, 1.);
+                            if (errorEdge < maxError) {
+                                if (mEdgePoints.find(maxError) == mEdgePoints.end())
+                                    mEdgePoints.emplace(maxError, 1.);
                                 else
-                                    m_EdgePoints[dMaxError] += 1;
-                            } else if (m_EdgePoints.find(dMaxError) == m_EdgePoints.end())
-                                m_EdgePoints.emplace(dMaxError, 0);
+                                    mEdgePoints[maxError] += 1;
+                            } else if (mEdgePoints.find(maxError) == mEdgePoints.end())
+                                mEdgePoints.emplace(maxError, 0);
 
-                            if (dErrorGPF < dMaxError) {
-                                if (m_GPFPoints.find(dMaxError) == m_GPFPoints.end())
-                                    m_GPFPoints.emplace(dMaxError, 1.);
+                            if (errorGPF < maxError) {
+                                if (mGPFPoints.find(maxError) == mGPFPoints.end())
+                                    mGPFPoints.emplace(maxError, 1.);
                                 else
-                                    m_GPFPoints[dMaxError] += 1;
-                            } else if (m_GPFPoints.find(dMaxError) == m_GPFPoints.end())
-                                m_GPFPoints.emplace(dMaxError, 0);
+                                    mGPFPoints[maxError] += 1;
+                            } else if (mGPFPoints.find(maxError) == mGPFPoints.end())
+                                mGPFPoints.emplace(maxError, 0);
 
-                            if (fabs(dMaxError - dInterval) > m_dErrorThreshold && fabs(dMaxError - m_dErrorThreshold) > 0) {
-                                dMaxError = m_dErrorThreshold - dInterval;
+                            if (fabs(maxError - dInterval) > mErrorThreshold && fabs(maxError - mErrorThreshold) > 0) {
+                                maxError = mErrorThreshold - dInterval;
                             }
                         }
                     }
                 }
-
-                cvReleaseImage(&pImage);
             }
         }
 
-        m_cProgCtrl.SetPos(static_cast<int>(i));
+        mProgCtrl.SetPos(static_cast<int>(i));
         UpdateWindow();
     }
     cWait.Restore();
-    for (auto it = m_CDFPoints.begin(); it != m_CDFPoints.end(); ++it) {
-        it->second *= 100. / m_iEyesCount;
+    for (auto it = mCDFPoints.begin(); it != mCDFPoints.end(); ++it) {
+        it->second *= 100. / mEyesCount;
     }
-    for (auto it = m_EdgePoints.begin(); it != m_EdgePoints.end(); ++it) {
-        it->second *= 100. / m_iEyesCount;
+    for (auto it = mEdgePoints.begin(); it != mEdgePoints.end(); ++it) {
+        it->second *= 100. / mEyesCount;
     }
-    for (auto it = m_GPFPoints.begin(); it != m_GPFPoints.end(); ++it) {
-        it->second *= 100. / m_iEyesCount;
+    for (auto it = mGPFPoints.begin(); it != mGPFPoints.end(); ++it) {
+        it->second *= 100. / mEyesCount;
     }
 
-    SetDlgItemInt(IDC_IMGD, static_cast<int>(m_iImgCount));
-    SetDlgItemInt(IDC_FACED, static_cast<int>(m_iFaceCount));
-    SetDlgItemInt(IDC_EYESD, static_cast<int>(m_iEyesCount));
+    SetDlgItemInt(IDC_IMGD, static_cast<int>(mImgCount));
+    SetDlgItemInt(IDC_FACED, static_cast<int>(mFaceCount));
+    SetDlgItemInt(IDC_EYESD, static_cast<int>(mEyesCount));
 
     Plot();
 }
@@ -296,29 +267,29 @@ void SBioIDEyeCenters::Serialize(CArchive& ar)
     CObject::Serialize(ar);
 
     if (ar.IsLoading()) {
-        CString sLineU;
-        ar.ReadString(sLineU);
-        char* pBuffer = reinterpret_cast<char*>(sLineU.GetBuffer(15));
+        CString lineU;
+        ar.ReadString(lineU);
+        char* pBuffer = reinterpret_cast<char*>(lineU.GetBuffer(15));
 
-        CStringA sLine(pBuffer);
-        int iLineStart = sLine.Find('\n');
-        iLineStart = sLine.Find('\n', iLineStart + 1);
-        iLineStart = sLine.Find('\n', iLineStart + 1);
-        int iLineEnd = sLine.Find('\n', iLineStart + 1);
-        int iSpace = sLine.Find(' ', iLineStart + 1);
+        CStringA line(pBuffer);
+        auto lineStart = line.Find('\n');
+        lineStart = line.Find('\n', lineStart + 1);
+        lineStart = line.Find('\n', lineStart + 1);
+        auto lineEnd = line.Find('\n', lineStart + 1);
+        auto space = line.Find(' ', lineStart + 1);
 
-        cRightEye.x = atoi(sLine.Mid(iLineStart, iSpace - iLineStart));
-        cRightEye.y = atoi(sLine.Mid(iSpace, iLineEnd - iLineStart));
+        rightEye.x = atoi(line.Mid(lineStart, space - lineStart));
+        rightEye.y = atoi(line.Mid(space, lineEnd - lineStart));
 
-        iLineStart = iLineEnd;
-        iLineEnd = sLine.Find('\n', iLineStart + 1);
+        lineStart = lineEnd;
+        lineEnd = line.Find('\n', lineStart + 1);
 
-        iSpace = sLine.Find(' ', iLineStart + 1);
+        space = line.Find(' ', lineStart + 1);
 
-        cLeftEye.x = atoi(sLine.Mid(iLineStart, iSpace - iLineStart));
-        cLeftEye.y = atoi(sLine.Mid(iSpace, iLineEnd - iLineStart));
+        leftEye.x = atoi(line.Mid(lineStart, space - lineStart));
+        leftEye.y = atoi(line.Mid(space, lineEnd - lineStart));
 
-        sLineU.ReleaseBuffer();
+        lineU.ReleaseBuffer();
     }
 }
 
@@ -327,15 +298,15 @@ BOOL CComparerDlg::OnInitDialog()
 
     CDialogEx::OnInitDialog();
 
-    m_dErrorThreshold = DEF_MAXTHRESHOLD;
-    m_iPointsNumber = DEF_POINTNUMBER;
+    mErrorThreshold = DEF_MAXTHRESHOLD;
+    mPointsNumber = DEF_POINTNUMBER;
 
-    SetDlgItemDouble(this, IDC_THRESH, m_dErrorThreshold);
-    SetDlgItemInt(IDC_EPOINTNUM, static_cast<int>(m_iPointsNumber));
+    SetDlgItemDouble(this, IDC_THRESH, mErrorThreshold);
+    SetDlgItemInt(IDC_EPOINTNUM, static_cast<int>(mPointsNumber));
 
-    m_iImgCount = 0;
-    m_iFaceCount = 0;
-    m_iEyesCount = 0;
+    mImgCount = 0;
+    mFaceCount = 0;
+    mEyesCount = 0;
 
     SetDlgItemText(IDC_IMGD, L"");
     SetDlgItemText(IDC_FACED, L"");
@@ -356,8 +327,8 @@ BOOL CComparerDlg::OnInitDialog()
         ::FreeLibrary(hDll);
     }
 
-    m_cGraph.SetXLabel(L"ErrorThreshold");
-    m_cGraph.SetYLabel(L"Detection Rate [%]");
+    mGraph.SetXLabel(L"ErrorThreshold");
+    mGraph.SetYLabel(L"Detection Rate [%]");
 
     CheckDlgButton(IDC_CDFG, TRUE);
     CheckDlgButton(IDC_EDGEG, TRUE);
@@ -387,19 +358,19 @@ HBRUSH CComparerDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 
 void CComparerDlg::Plot(void)
 {
-    m_cGraph.ClearGraph();
+    mGraph.ClearGraph();
     SetupGraph();
     if (IsDlgButtonChecked(IDC_CDFG))
-        for (auto it = m_CDFPoints.begin(); it != m_CDFPoints.end(); ++it) {
-            m_cGraph.PlotXY(it->first, it->second, 0);
+        for (auto it = mCDFPoints.begin(); it != mCDFPoints.end(); ++it) {
+            mGraph.PlotXY(it->first, it->second, 0);
         }
     if (IsDlgButtonChecked(IDC_EDGEG))
-        for (auto it = m_EdgePoints.begin(); it != m_EdgePoints.end(); ++it) {
-            m_cGraph.PlotXY(it->first, it->second, 1);
+        for (auto it = mEdgePoints.begin(); it != mEdgePoints.end(); ++it) {
+            mGraph.PlotXY(it->first, it->second, 1);
         }
     if (IsDlgButtonChecked(IDC_GPFG))
-        for (auto it = m_GPFPoints.begin(); it != m_GPFPoints.end(); ++it) {
-            m_cGraph.PlotXY(it->first, it->second, 2);
+        for (auto it = mGPFPoints.begin(); it != mGPFPoints.end(); ++it) {
+            mGraph.PlotXY(it->first, it->second, 2);
         }
 }
 
@@ -421,70 +392,70 @@ void CComparerDlg::OnBnClickedGpfg()
 void CComparerDlg::SetupGraph(void)
 {
 
-    m_cGraph.SetRange(0., m_dErrorThreshold, -10, 100);
+    mGraph.SetRange(0., mErrorThreshold, -10, 100);
 
-    m_cGraph.SetElementLinetype(0);
-    m_cGraph.SetElementWidth(2);
-    m_cGraph.SetElementLineColor(RGB(255, 0, 0));
+    mGraph.SetElementLinetype(0);
+    mGraph.SetElementWidth(2);
+    mGraph.SetElementLineColor(RGB(255, 0, 0));
 
-    m_cGraph.AddElement();
+    mGraph.AddElement();
 
-    m_cGraph.SetElementLineColor(RGB(0, 0, 255));
-    m_cGraph.SetElementWidth(2);
-    m_cGraph.SetElementLinetype(0);
+    mGraph.SetElementLineColor(RGB(0, 0, 255));
+    mGraph.SetElementWidth(2);
+    mGraph.SetElementLinetype(0);
 
-    m_cGraph.AddElement();
+    mGraph.AddElement();
 
-    m_cGraph.SetElementLineColor(RGB(0, 255, 0));
-    m_cGraph.SetElementWidth(2);
-    m_cGraph.SetElementLinetype(0);
+    mGraph.SetElementLineColor(RGB(0, 255, 0));
+    mGraph.SetElementWidth(2);
+    mGraph.SetElementLinetype(0);
 }
 
 void CComparerDlg::OnBnClickedExport()
 {
-    auto iCDFNum = m_CDFPoints.size();
-    auto iGPFNum = m_GPFPoints.size();
-    auto iEDGENum = m_EdgePoints.size();
+    auto CDFNum = mCDFPoints.size();
+    auto GPFNum = mGPFPoints.size();
+    auto EDGENum = mEdgePoints.size();
 
-    auto iPoints = MAX(iCDFNum, MAX(iGPFNum, iEDGENum));
+    auto points = MAX(CDFNum, MAX(GPFNum, EDGENum));
     CFileDialog fileDlg(FALSE, NULL, NULL, 4 | 2, L"Text Files(*.txt)|*.txt|All(*.*)|*.*||", this);
     if (fileDlg.DoModal() == IDOK) {
         CStdioFile exportFile;
         exportFile.Open(fileDlg.GetPathName(), CFile::modeWrite | CFile::modeCreate);
-        if (iPoints) {
-            auto it_cdf = m_CDFPoints.begin();
-            auto it_gpf = m_GPFPoints.begin();
-            auto it_edge = m_EdgePoints.begin();
+        if (points) {
+            auto itCdf = mCDFPoints.begin();
+            auto itGpf = mGPFPoints.begin();
+            auto itEdge = mEdgePoints.begin();
 
-            for (size_t i = 0; i < iPoints; ++i) {
-                double t = it_cdf->first;
-                CString strLine;
-                strLine.Format(L"%f", t);
+            for (size_t i = 0; i < points; ++i) {
+                double t = itCdf->first;
+                CString line;
+                line.Format(L"%f", t);
 
                 if (IsDlgButtonChecked(IDC_CDFG)) {
-                    double val = it_cdf->second;
+                    double val = itCdf->second;
                     CString strVal;
                     strVal.Format(L"\t%f", val);
-                    strLine += strVal;
+                    line += strVal;
                 }
                 if (IsDlgButtonChecked(IDC_GPFG)) {
-                    double val = it_gpf->second;
+                    double val = itGpf->second;
                     CString strVal;
                     strVal.Format(L"\t%f", val);
-                    strLine += strVal;
+                    line += strVal;
                 }
                 if (IsDlgButtonChecked(IDC_EDGEG)) {
-                    double val = it_edge->second;
+                    double val = itEdge->second;
                     CString strVal;
                     strVal.Format(L"\t%f", val);
-                    strLine += strVal;
+                    line += strVal;
                 }
-                strLine += "\n";
-                exportFile.WriteString(strLine.GetBuffer(100));
-                it_cdf++;
-                it_gpf++;
-                it_edge++;
-                strLine.ReleaseBuffer();
+                line += "\n";
+                exportFile.WriteString(line.GetBuffer(100));
+                itCdf++;
+                itGpf++;
+                itEdge++;
+                line.ReleaseBuffer();
             }
         }
         exportFile.Close();
