@@ -43,7 +43,7 @@ protected:
 
     DECLARE_MESSAGE_MAP()
 public:
-    CListCtrl m_cLogList;
+    CListCtrl mLogList;
     virtual BOOL OnInitDialog();
     void InsertLog(CString time, CString strMsg);
 };

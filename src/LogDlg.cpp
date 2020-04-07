@@ -36,7 +36,7 @@ CLogDlg::~CLogDlg()
 void CLogDlg::DoDataExchange(CDataExchange* pDX)
 {
     CDialog::DoDataExchange(pDX);
-    DDX_Control(pDX, IDC_LIST2, m_cLogList);
+    DDX_Control(pDX, IDC_LIST2, mLogList);
 }
 
 BEGIN_MESSAGE_MAP(CLogDlg, CDialog)
@@ -47,18 +47,18 @@ BOOL CLogDlg::OnInitDialog()
 {
     CDialog::OnInitDialog();
 
-    int iTimeWidth = 120;
-    int iMessageWidth = 700;
-    m_cLogList.SetExtendedStyle(LVS_EX_FULLROWSELECT);
-    m_cLogList.InsertColumn(0, L"Time", LVCFMT_LEFT, iTimeWidth);
-    m_cLogList.InsertColumn(1, L"Message", LVCFMT_LEFT, iMessageWidth);
+    constexpr auto timeWidth = 120;
+    constexpr auto messageWidth = 700;
+    mLogList.SetExtendedStyle(LVS_EX_FULLROWSELECT);
+    mLogList.InsertColumn(0, L"Time", LVCFMT_LEFT, timeWidth);
+    mLogList.InsertColumn(1, L"Message", LVCFMT_LEFT, messageWidth);
 
     return TRUE; 
 }
 
 void CLogDlg::InsertLog(CString time, CString strMsg)
 {
-    //int nLogCount = m_cLogList.GetItemCount();
-    //m_cLogList.InsertItem(LVIF_TEXT|LVIF_STATE, 0,time,0, LVIS_SELECTED,1, 0);
-    //m_cLogList.SetItemText(0, 1,strMsg);
+   int nLogCount = mLogList.GetItemCount();
+   mLogList.InsertItem(LVIF_TEXT|LVIF_STATE, 0,time,0, LVIS_SELECTED,1, 0);
+   mLogList.SetItemText(0, 1,strMsg);
 }
