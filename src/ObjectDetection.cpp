@@ -37,8 +37,8 @@ SOFTWARE.
 
 void CObjectDetection::Init()
 {
-    m_pFacesCascade.load("haarcascade_frontalface_alt.xml");
-    m_pEyesCascade.load("haarcascade_eye.xml");
+    mFacesCascade.load("haarcascade_frontalface_alt.xml");
+    mEyesCascade.load("haarcascade_eye.xml");
 }
 
 std::optional<cv::Rect> CObjectDetection::DetectFace(const cv::Mat& img)
@@ -50,7 +50,7 @@ std::optional<cv::Rect> CObjectDetection::DetectFace(const cv::Mat& img)
     cv::Mat smallImg;
     cv::resize(img, smallImg, cv::Size {}, 1. / resizeRatio, 1. / resizeRatio);
     std::vector<cv::Rect> faces;
-    m_pFacesCascade.detectMultiScale(smallImg, faces, scaleFactor, minNeighbours, cv::CASCADE_SCALE_IMAGE, cv::Size(30, 30));
+    mFacesCascade.detectMultiScale(smallImg, faces, scaleFactor, minNeighbours, cv::CASCADE_SCALE_IMAGE, cv::Size(30, 30));
 #ifdef DEBUG
     cv::imwrite("small_face.jpg", smallImg);
 #endif
@@ -66,7 +66,7 @@ std::optional<cv::Rect> CObjectDetection::DetectFace(const cv::Mat& img)
     return face;
 }
 
-void CObjectDetection::DetectEyes(const cv::Mat& img, const cv::Rect& face, cv::Rect& leftEye, cv::Rect& rightEye)
+std::pair<cv::Rect, cv::Rect> CObjectDetection::DetectEyes(const cv::Mat& img, const cv::Rect& face)
 {
     auto searchImageHeight = face.height / 3;
     auto searchImageHeightOffset = face.height / 5;
@@ -74,7 +74,7 @@ void CObjectDetection::DetectEyes(const cv::Mat& img, const cv::Rect& face, cv::
 
     auto ROI = cv::Rect(face.x, face.y + searchImageHeightOffset, searchImageWidth, searchImageHeight);
     if ((ROI.x + ROI.width >= img.cols) || (ROI.y + ROI.height >= img.rows)) {
-        return;
+        return {};
     }
 
     cv::Mat eyeSearchImg { searchImageHeight, searchImageWidth, CV_8UC3 };
@@ -92,12 +92,15 @@ void CObjectDetection::DetectEyes(const cv::Mat& img, const cv::Rect& face, cv::
     constexpr auto minNeigbours = 5;
 
     std::vector<cv::Rect> eyes;
-    m_pEyesCascade.detectMultiScale(eyeSearchImg, eyes, scaleFactor, minNeigbours, cv::CASCADE_SCALE_IMAGE);
+    mEyesCascade.detectMultiScale(eyeSearchImg, eyes, scaleFactor, minNeigbours, cv::CASCADE_SCALE_IMAGE);
 
     auto distFromLeft = 0;
     auto distFromRight = 0;
 
-    for (auto& eye : eyes) {
+    cv::Rect leftEye {};
+    cv::Rect rightEye {};
+
+    for (auto eye : eyes) {
         eye.x += ROI.x;
         eye.y += ROI.y;
 
@@ -123,6 +126,10 @@ void CObjectDetection::DetectEyes(const cv::Mat& img, const cv::Rect& face, cv::
         }
     }
 
+    if (rightEye.empty() || leftEye.empty()) {
+        return {};
+    }
+    return { leftEye, rightEye };
 #if 0
     auto pEyeDrawnImg = cvCreateImage(img->nSize, img->depth, img->nChannels);
     cvCopy(img, pEyeDrawnImg);
@@ -275,13 +282,6 @@ struct greater_second {
 typedef std::pair<int, double> t_data;
 typedef std::priority_queue<t_data, std::deque<t_data>, greater_second<t_data>> t_queue;
 
-template <typename T>
-void ClearQueue(T queue)
-{
-    while (queue.size()) {
-        queue.pop();
-    }
-}
 
 CvPoint CObjectDetection::DetectPupilEdge(const cv::Mat& eyeImg)
 {
@@ -548,8 +548,6 @@ CvPoint CObjectDetection::DetectPupilGPF(const cv::Mat& eyeImg)
     cvReleaseImage(&pDisplay2);
     cvReleaseImage(&pDisplay3);
 #endif
-    ClearQueue(qGPFV);
-    ClearQueue(qGPFH);
     return pupil;
 }
 
@@ -604,7 +602,7 @@ double CObjectDetection::GPFV(const cv::Mat& eyeImg, const int x, const int y1, 
     return result;
 }
 
-BOOL CObjectDetection::DetectLeftBlink(const cv::Mat& eyeImg, const size_t lastFramesNumber, const int varrianceThreshold, const double ratioThreshold, bool reset)
+bool CObjectDetection::DetectLeftBlink(const cv::Mat& eyeImg, const size_t lastFramesNumber, const int varrianceThreshold, const double ratioThreshold, bool reset)
 {
     static cv::Mat meanMap {};
     static cv::Mat varrianceMap {};
@@ -612,7 +610,7 @@ BOOL CObjectDetection::DetectLeftBlink(const cv::Mat& eyeImg, const size_t lastF
     return DetectBlink(eyeImg, lastFramesNumber, varrianceThreshold, ratioThreshold, meanMap, varrianceMap, lastFramesQueue, reset);
 }
 
-BOOL CObjectDetection::DetectRightBlink(const cv::Mat& eyeImg, const size_t lastFramesNumber, const int varrianceThreshold, const double ratioThreshold, bool reset)
+bool CObjectDetection::DetectRightBlink(const cv::Mat& eyeImg, const size_t lastFramesNumber, const int varrianceThreshold, const double ratioThreshold, bool reset)
 {
     static cv::Mat meanMap {};
     static cv::Mat varrianceMap {};

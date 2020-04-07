@@ -286,17 +286,11 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
 
     auto pFace = CObjectDetection::DetectFace(cv::cvarrToMat(pImg));
     if (pFace) {
-        cv::Rect cLeftEye;
-        cLeftEye.x = -1;
-        cLeftEye.y = -1;
 
-        cv::Rect cRightEye;
-        cRightEye.x = -1;
-        cRightEye.y = -1;
 
-        CObjectDetection::DetectEyes(cv::cvarrToMat(pImg), *pFace, cLeftEye, cRightEye);
+        auto [cLeftEye, cRightEye] = CObjectDetection::DetectEyes(cv::cvarrToMat(pImg), *pFace);
 
-        if (cLeftEye.x != -1) {
+        if (!cLeftEye.empty()) {
             *pLeftEye = cvCreateImage(cvSize(cLeftEye.width, cLeftEye.height), pImg->depth, pImg->nChannels);
 
             cvSetImageROI(pImg,
@@ -304,7 +298,7 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
             cvCopy(pImg, *pLeftEye, NULL);
             cvResetImageROI(pImg);
         }
-        if (cRightEye.x != -1) {
+        if (!cRightEye.empty()) {
             *pRightEye = cvCreateImage(cvSize(cRightEye.width, cRightEye.height), pImg->depth, pImg->nChannels);
 
             cvSetImageROI(pImg,

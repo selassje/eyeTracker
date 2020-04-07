@@ -152,9 +152,6 @@ void CComparerDlg::OnBnClickedButton2()
                 if (pFace) {
                     ++m_iFaceCount;
 
-                    cv::Rect cLeftEye;
-                    cv::Rect cRightEye;
-
                     CvPoint cLeftPupilCDF;
                     CvPoint cRightPupilCDF;
 
@@ -179,7 +176,7 @@ void CComparerDlg::OnBnClickedButton2()
                     cRightPupilGPF.x = -1;
                     cRightPupilGPF.y = -1;
 
-                    CObjectDetection::DetectEyes(cv::cvarrToMat(pImage), *pFace, cLeftEye, cRightEye);
+                    auto [cLeftEye, cRightEye] = CObjectDetection::DetectEyes(cv::cvarrToMat(pImage), *pFace);
 
                     if (!cLeftEye.empty()) {
                         IplImage* pLeftEyeImg = cvCreateImage(cvSize(cLeftEye.width, cLeftEye.height), pImage->depth, pImage->nChannels);

@@ -213,9 +213,11 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                 strLog.Format(L"Detected Face (x=%d y=%d width=%d height=%d)", pFace->x, pFace->y, pFace->width, pFace->height);
                 Log(strLog);
 
-                cv::Rect cEyeLeft {};
-                cv::Rect cEyeRight {};
+                std::pair<cv::Rect, cv::Rect> eyes;
 
+                auto& cEyeLeft = eyes.first;
+                auto& cEyeRight = eyes.second;
+  
                 bool bAvgLeft = TRUE;
                 bool bAvgRight = TRUE;
 
@@ -224,7 +226,7 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
 
                         IplImage* pCurrentFrame = cvCloneImage(cvQueryFrame(m_pCapture));
 
-                        CObjectDetection::DetectEyes(cv::cvarrToMat(pCurrentFrame), *pFace, cEyeLeft, cEyeRight);
+                        eyes = CObjectDetection::DetectEyes(cv::cvarrToMat(pCurrentFrame), *pFace);
 
                         cvReleaseImage(&pCurrentFrame);
 

@@ -33,18 +33,18 @@ SOFTWARE.
 class CObjectDetection {
 public:
     static std::optional<cv::Rect> DetectFace(const cv::Mat& img);
-    static void DetectEyes(const cv::Mat& img, const cv::Rect& face, cv::Rect& leftEye, cv::Rect& rightEye);
+    static std::pair<cv::Rect,cv::Rect> DetectEyes(const cv::Mat& img, const cv::Rect& face);
     static cv::Point DetectPupilCDF(const cv::Mat& eyeImg);
     static CvPoint DetectPupilGPF(const cv::Mat& eyeImg);
     static CvPoint DetectPupilEdge(const cv::Mat& eyeImg);
-    static BOOL DetectLeftBlink(const cv::Mat& eyeImg, const size_t lastFramesNumber, const int varrianceThreshold, const double ratioThreshold, bool reset = false);
-    static BOOL DetectRightBlink(const cv::Mat& eyeImg, const size_t lastFramesNumber, const int varrianceThreshold, const double ratioThreshold, bool reset = false);
+    static bool DetectLeftBlink(const cv::Mat& eyeImg, const size_t lastFramesNumber, const int varrianceThreshold, const double ratioThreshold, bool reset = false);
+    static bool DetectRightBlink(const cv::Mat& eyeImg, const size_t lastFramesNumber, const int varrianceThreshold, const double ratioThreshold, bool reset = false);
     static void Init();
 
 private:
     static double CFDThreshold(const cv::Mat& eyeImg, cv::Mat& eyeImgOut, const double threshold);
-    inline static cv::CascadeClassifier m_pFacesCascade {};
-    inline static cv::CascadeClassifier m_pEyesCascade {};
+    inline static cv::CascadeClassifier mFacesCascade {};
+    inline static cv::CascadeClassifier mEyesCascade {};
 
     static bool DetectBlink(const cv::Mat& eyeImg,
         const size_t lastFramesNumber,
