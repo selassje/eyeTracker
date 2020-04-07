@@ -28,8 +28,8 @@ SOFTWARE.
 #include "opencv2/imgcodecs.hpp"
 
 
-#define DEF_MAXTHRESHOLD 0.25
-#define DEF_POINTNUMBER 100
+static constexpr auto MaxThreshold = 0.25;
+static constexpr auto PointNumber = 100;
 
 IMPLEMENT_DYNAMIC(CComparerDlg, CDialogEx)
 
@@ -109,23 +109,20 @@ void CComparerDlg::OnBnClickedButton2()
 
     mErrorThreshold = GetDlgItemDouble(this, IDC_THRESH);
     if (mErrorThreshold > 1 || mErrorThreshold <= 0) {
-        mErrorThreshold = DEF_MAXTHRESHOLD;
+        mErrorThreshold = MaxThreshold;
         SetDlgItemDouble(this, IDC_THRESH, mErrorThreshold);
         UpdateWindow();
     }
 
     mPointsNumber = GetDlgItemInt(IDC_EPOINTNUM);
     if (mPointsNumber <= 0) {
-        mPointsNumber = DEF_POINTNUMBER;
+        mPointsNumber = PointNumber;
         SetDlgItemInt(IDC_EPOINTNUM, mPointsNumber);
         UpdateWindow();
     }
 
-    double dInterval = mErrorThreshold / mPointsNumber;
-
-    auto iImageCount = mImagePaths.size();
-
-    mProgCtrl.SetRange(0, static_cast<short>(iImageCount) - 1);
+    double interval = mErrorThreshold / mPointsNumber;
+    mProgCtrl.SetRange(0, static_cast<short>(mImagePaths.size()) - 1);
     CWaitCursor cWait;
     for (unsigned i = 0; i < static_cast<unsigned>(mImagePaths.size()); ++i) {
         CString sImgPath = mImagePaths[static_cast<size_t>(i)];
@@ -151,64 +148,41 @@ void CComparerDlg::OnBnClickedButton2()
                 if (face) {
                     ++mFaceCount;
 
-                    cv::Point leftPupilCDF {};
-                    cv::Point rightPupilCDF {};
-                    cv::Point leftPupilEdge;
-                    cv::Point rightPupilEdge;
-                    cv::Point leftPupilGPF;
-                    cv::Point rightPupilGPF;
-
                     auto [leftEye, rightEye] = CObjectDetection::DetectEyes(img, *face);
 
-                    if (!leftEye.empty()) {
+                    auto detectPupils = [](const auto& img, const auto& eye) {
+                        cv::Mat eyeImg { eye.height, eye.width, img.type() };
+                        img(eye).copyTo(eyeImg);
 
-                        cv::Mat leftEyeImg{ leftEye.height, leftEye.width, img.type() };
-                        img(leftEye).copyTo(leftEyeImg);
+                        auto pupilCDF = CObjectDetection::DetectPupilCDF(eyeImg);
+                        auto pupilEdge = CObjectDetection::DetectPupilEdge(eyeImg);
+                        auto pupilGPF = CObjectDetection::DetectPupilGPF(eyeImg);
 
-                        leftPupilCDF = CObjectDetection::DetectPupilCDF(leftEyeImg);
-                        leftPupilEdge = CObjectDetection::DetectPupilEdge(leftEyeImg);
-                        leftPupilGPF = CObjectDetection::DetectPupilGPF(leftEyeImg);
+                        pupilCDF.x += eye.x;
+                        pupilCDF.y += eye.y;
+                        pupilEdge.x += eye.x;
+                        pupilEdge.y += eye.y;
+                        pupilGPF.x += eye.x;
+                        pupilGPF.y += eye.y;
 
-                        leftPupilCDF.x += leftEye.x;
-                        leftPupilCDF.y += leftEye.y;
-
-                        leftPupilEdge.x += leftEye.x;
-                        leftPupilEdge.y += leftEye.y;
-
-                        leftPupilGPF.x += leftEye.x;
-                        leftPupilGPF.y += leftEye.y;
-                    }
-
-                    if (!rightEye.empty()) {
-                        cv::Mat rightEyeImg { rightEye.height, rightEye.width, img.type() };
-                        img(rightEye).copyTo(rightEyeImg);
-
-                        rightPupilCDF = CObjectDetection::DetectPupilCDF(rightEyeImg);
-                        rightPupilEdge = CObjectDetection::DetectPupilEdge(rightEyeImg);
-                        rightPupilGPF = CObjectDetection::DetectPupilGPF(rightEyeImg);
-
-                        rightPupilCDF.x += rightEye.x;
-                        rightPupilCDF.y += rightEye.y;
-
-                        rightPupilEdge.x += rightEye.x;
-                        rightPupilEdge.y += rightEye.y;
-
-                        rightPupilGPF.x += rightEye.x;
-                        rightPupilGPF.y += rightEye.y;
-                    }
+                        return std::tuple(pupilCDF, pupilEdge, pupilGPF);
+                    };
 
                     if (!leftEye.empty() && !rightEye.empty()) {
                         ++mEyesCount;
+
+                        auto [leftPupilCDF, leftPupilEdge, leftPupilGPF] = detectPupils(img, leftEye);
+                        auto [rightPupilCDF, rightPupilEdge, rightPupilGPF] = detectPupils(img, rightEye);                      
                         double errorCDF = cBioIDPos.Error(leftPupilCDF, rightPupilCDF);
                         double errorEdge = cBioIDPos.Error(leftPupilEdge, rightPupilEdge);
                         double errorGPF = cBioIDPos.Error(leftPupilGPF, rightPupilGPF);
-                        for (double maxError = 0; maxError <= mErrorThreshold; maxError += dInterval) { //-V1034
+                        for (double maxError = 0; maxError <= mErrorThreshold; maxError += interval) { //-V1034
 
                             if (errorCDF < maxError) {
                                 if (mCDFPoints.find(maxError) == mCDFPoints.end())
                                     mCDFPoints.emplace(maxError, 1.);
                                 else
-                                    mCDFPoints[maxError] += 1;
+                                    ++mCDFPoints[maxError];
                             }
 
                             else if (mCDFPoints.find(maxError) == mCDFPoints.end())
@@ -218,7 +192,7 @@ void CComparerDlg::OnBnClickedButton2()
                                 if (mEdgePoints.find(maxError) == mEdgePoints.end())
                                     mEdgePoints.emplace(maxError, 1.);
                                 else
-                                    mEdgePoints[maxError] += 1;
+                                    ++mEdgePoints[maxError];
                             } else if (mEdgePoints.find(maxError) == mEdgePoints.end())
                                 mEdgePoints.emplace(maxError, 0);
 
@@ -226,12 +200,12 @@ void CComparerDlg::OnBnClickedButton2()
                                 if (mGPFPoints.find(maxError) == mGPFPoints.end())
                                     mGPFPoints.emplace(maxError, 1.);
                                 else
-                                    mGPFPoints[maxError] += 1;
+                                    ++mGPFPoints[maxError];
                             } else if (mGPFPoints.find(maxError) == mGPFPoints.end())
                                 mGPFPoints.emplace(maxError, 0);
 
-                            if (fabs(maxError - dInterval) > mErrorThreshold && fabs(maxError - mErrorThreshold) > 0) {
-                                maxError = mErrorThreshold - dInterval;
+                            if (fabs(maxError - interval) > mErrorThreshold && fabs(maxError - mErrorThreshold) > 0) {
+                                maxError = mErrorThreshold - interval;
                             }
                         }
                     }
@@ -298,8 +272,8 @@ BOOL CComparerDlg::OnInitDialog()
 
     CDialogEx::OnInitDialog();
 
-    mErrorThreshold = DEF_MAXTHRESHOLD;
-    mPointsNumber = DEF_POINTNUMBER;
+    mErrorThreshold = MaxThreshold;
+    mPointsNumber = PointNumber;
 
     SetDlgItemDouble(this, IDC_THRESH, mErrorThreshold);
     SetDlgItemInt(IDC_EPOINTNUM, static_cast<int>(mPointsNumber));
