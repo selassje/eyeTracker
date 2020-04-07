@@ -27,7 +27,9 @@ SOFTWARE.
 #include "Constants.hpp"
 #include "EyeTrackerDlg.hpp"
 #include "ObjectDetection.hpp"
+#include "Common.hpp"
 #include "opencv2/highgui.hpp"
+#include "opencv2/highgui/highgui_c.h"
 
 #define EYEDISPLAY_TIMER 2
 #define DISPLAY_LEFT_EYE_WINDOW "Left"
@@ -60,48 +62,13 @@ ON_BN_CLICKED(IDC_EDGE, &CImageDlg::OnClickedEdge)
 ON_BN_CLICKED(IDC_GPF, &CImageDlg::OnBnClickedGpf)
 END_MESSAGE_MAP()
 
+
 BOOL CImageDlg::OnInitDialog()
 {
     CDialog::OnInitDialog();
-
-    {
-        cv::namedWindow(DISPLAY_LEFT_EYE_WINDOW, CV_WINDOW_AUTOSIZE);
-        HWND hWnd = (HWND)cvGetWindowHandle(DISPLAY_LEFT_EYE_WINDOW);
-        HWND hParent = ::GetParent(hWnd);
-        CWnd* pCameraWndParent = GetDlgItem(IDC_LEYEOUT);
-        RECT cLeftEye;
-        pCameraWndParent->GetClientRect(&cLeftEye);
-        mLeftEyeWidth = cLeftEye.right;
-        mLeftEyeHeight = cLeftEye.bottom;
-        ::SetParent(hWnd, pCameraWndParent->m_hWnd);
-        ::ShowWindow(hParent, SW_HIDE);
-    }
-
-    {
-        cv::namedWindow(DISPLAY_RIGHT_EYE_WINDOW, CV_WINDOW_AUTOSIZE);
-        HWND hWnd = (HWND)cvGetWindowHandle(DISPLAY_RIGHT_EYE_WINDOW);
-        HWND hParent = ::GetParent(hWnd);
-        CWnd* pCameraWndParent = GetDlgItem(IDC_REYEOUT);
-        RECT cRightEye;
-        pCameraWndParent->GetClientRect(&cRightEye);
-        mImgWidth = cRightEye.right;
-        mImgHeight = cRightEye.bottom;
-        ::SetParent(hWnd, pCameraWndParent->m_hWnd);
-        ::ShowWindow(hParent, SW_HIDE);
-    }
-
-    {
-        cv::namedWindow(DISPLAY_IMG_WINDOW, CV_WINDOW_AUTOSIZE);
-        HWND hWnd = (HWND)cvGetWindowHandle(DISPLAY_IMG_WINDOW);
-        HWND hParent = ::GetParent(hWnd);
-        CWnd* pCameraWndParent = GetDlgItem(IDC_IMG);
-        RECT cRightEye;
-        pCameraWndParent->GetClientRect(&cRightEye);
-        mRightEyeWidth = cRightEye.right - cRightEye.left;
-        mRightEyeHeight = cRightEye.bottom - cRightEye.top;
-        ::SetParent(hWnd, pCameraWndParent->m_hWnd);
-        ::ShowWindow(hParent, SW_HIDE);
-    }
+    SetupWindow(*this,DISPLAY_LEFT_EYE_WINDOW, IDC_LEYEOUT, mLeftEyeWidth, mLeftEyeHeight);
+    SetupWindow(*this,DISPLAY_RIGHT_EYE_WINDOW, IDC_REYEOUT, mRightEyeWidth, mRightEyeHeight);
+    SetupWindow(*this,DISPLAY_IMG_WINDOW, IDC_IMG, mImgWidth, mImgHeight);
 
     mCurrentImg = 0;
     mImgCount = 0;

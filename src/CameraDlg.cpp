@@ -28,7 +28,9 @@ SOFTWARE.
 #include "Constants.hpp"
 #include "EyeTrackerDlg.hpp"
 #include "ObjectDetection.hpp"
+#include "Common.hpp"
 #include "opencv2/highgui.hpp"
+#include "opencv2/highgui/highgui_c.h"
 
 
 #define DISPLAY_TIMER 1
@@ -68,44 +70,9 @@ BOOL CCameraDlg::OnInitDialog()
     CDialog::OnInitDialog();
     mEyeTrackerDlg = (CEyeTrackerDlg*)GetParent();
 
-    {
-        cvNamedWindow(DISPLAY_WINDOW, CV_WINDOW_AUTOSIZE);
-        HWND hWnd = (HWND)cvGetWindowHandle(DISPLAY_WINDOW);
-        HWND hParent = ::GetParent(hWnd);
-        CWnd* pCameraWndParent = GetDlgItem(IDC_STATICCAMERA);
-        ::SetParent(hWnd, pCameraWndParent->m_hWnd);
-        ::ShowWindow(hParent, SW_HIDE);
-        CRect cCameraRect;
-        pCameraWndParent->GetClientRect(&cCameraRect);
-        mWndWidth = cCameraRect.Width();
-        mWndHeight = cCameraRect.Height();
-    }
-
-    {
-        cvNamedWindow(EYEL_WINDOW, CV_WINDOW_AUTOSIZE);
-        HWND hWnd = (HWND)cvGetWindowHandle(EYEL_WINDOW);
-        HWND hParent = ::GetParent(hWnd);
-        CWnd* pCameraWndParent = GetDlgItem(IDC_LEYEDISPL);
-        ::SetParent(hWnd, pCameraWndParent->m_hWnd);
-        ::ShowWindow(hParent, SW_HIDE);
-        CRect cCameraRect;
-        pCameraWndParent->GetClientRect(&cCameraRect);
-        mLeftEyeWndWidth = cCameraRect.Width();
-        mLeftEyeWndHeight = cCameraRect.Height();
-    }
-
-    {
-        cvNamedWindow(EYER_WINDOW, CV_WINDOW_AUTOSIZE);
-        HWND hWnd = (HWND)cvGetWindowHandle(EYER_WINDOW);
-        HWND hParent = ::GetParent(hWnd);
-        CWnd* pCameraWndParent = GetDlgItem(IDC_REYEDISPL);
-        ::SetParent(hWnd, pCameraWndParent->m_hWnd);
-        ::ShowWindow(hParent, SW_HIDE);
-        CRect cCameraRect;
-        pCameraWndParent->GetClientRect(&cCameraRect);
-        mRightEyeWndWidth = cCameraRect.Width();
-        mRightEyeWndHeight = cCameraRect.Height();
-    }
+    SetupWindow(*this, DISPLAY_WINDOW, IDC_STATICCAMERA, mWndWidth, mWndHeight);
+    SetupWindow(*this, EYEL_WINDOW, IDC_LEYEDISPL, mLeftEyeWndWidth, mLeftEyeWndHeight);
+    SetupWindow(*this, EYER_WINDOW, IDC_REYEDISPL, mRightEyeWndWidth, mRightEyeWndHeight);
 
     mIsMouseControl = FALSE;
     mIsTracking = FALSE;

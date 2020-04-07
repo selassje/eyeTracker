@@ -46,7 +46,6 @@ std::optional<cv::Rect> CObjectDetection::DetectFace(const cv::Mat& img)
     constexpr auto resizeRatio = 2;
     constexpr double scaleFactor = 1.1;
     constexpr auto minNeighbours = 2;
-
     cv::Mat smallImg;
     cv::resize(img, smallImg, cv::Size {}, 1. / resizeRatio, 1. / resizeRatio);
     std::vector<cv::Rect> faces;
@@ -405,7 +404,7 @@ cv::Point CObjectDetection::DetectPupilGPF(const cv::Mat& eyeImg)
 
     t_queue qGPFH;
     t_queue qGPFV;
-#ifdef DEBUG
+#ifdef DEBUG_
     IplImage* pDisplay = cvCreateImage(cvSize(250, 150), 8, 1);
     IplImage* pDisplay2 = cvCreateImage(cvSize(250, 150), 8, 1);
     IplImage* pDisplay3 = cvCreateImage(cvSize(250, 150), 8, 1);
@@ -489,7 +488,7 @@ cv::Point CObjectDetection::DetectPupilGPF(const cv::Mat& eyeImg)
             V.nextPointDer.y = imageSize.width - 1 - (int)(absDerV * 0.5);
 
             if (x > 1)
-                cv::line(grayImgV, V.lastPointDer, V.nextPointDer, cvScalar(255), 1, 8, 0);
+                cv::line(grayImgV, V.lastPointDer, V.nextPointDer, cv::Scalar(255), 1, 8, 0);
 
             if (x > xLimit && x < xLimit2)
                 qGPFV.push(t_data(x, absDerV));
@@ -502,7 +501,7 @@ cv::Point CObjectDetection::DetectPupilGPF(const cv::Mat& eyeImg)
 
         currentGPFV = nextGPFV;
         if (x > 0) {
-            cv::line(grayImgV, V.lastPoint, V.nextPoint, cvScalar(255), 1, 8, 0);
+            cv::line(grayImgV, V.lastPoint, V.nextPoint, cv::Scalar { 255 }, 1, 8, 0);
         }
 
         V.lastPoint = V.nextPoint;

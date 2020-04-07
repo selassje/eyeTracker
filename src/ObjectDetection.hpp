@@ -29,6 +29,7 @@ SOFTWARE.
 #include "opencv2/objdetect.hpp"
 #include "stdafx.h"
 #include <optional>
+#include <deque>
 
 class CObjectDetection {
 public:
