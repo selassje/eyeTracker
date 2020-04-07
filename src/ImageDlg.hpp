@@ -37,32 +37,8 @@ public:
 
     enum { IDD = IDD_IMAGEDLG };
 
-protected:
-    virtual void DoDataExchange(CDataExchange* pDX);
-    DECLARE_MESSAGE_MAP()
-private:
-    IplImage* GetRightEyeImg(void);
-    IplImage* GetLeftEyeImg(void);
-    int m_iLeftEyeWidth {};
-    int m_iLeftEyeHeight {};
-    int m_iRightEyeWidth {};
-    int m_iRightEyeHeight {};
-    int m_iImgWidth {};
-    int m_iImgHeight {};
-    size_t m_iCurrentImg {};
-    size_t m_iImgCount {};
-
-    void AnalyzeCurrentImg();
-
-public:
     virtual BOOL OnInitDialog();
 
-private:
-    CComboBox m_cEyeMovCombo;
-    std::vector<CString> m_lImages;
-    void AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRightEy);
-
-public:
     afx_msg void OnBnClickedButton1();
     afx_msg void OnBnClickedNext();
     afx_msg void OnBnClickedPrev();
@@ -70,6 +46,24 @@ public:
     afx_msg void OnClickedCdf();
     afx_msg void OnClickedEdge();
     afx_msg void OnBnClickedGpf();
+
+protected:
+    virtual void DoDataExchange(CDataExchange* pDX);
+    DECLARE_MESSAGE_MAP()
+
+private:
+    int mLeftEyeWidth {};
+    int mLeftEyeHeight {};
+    int mRightEyeWidth {};
+    int mRightEyeHeight {};
+    int mImgWidth {};
+    int mImgHeight {};
+    size_t mCurrentImg {};
+    size_t mImgCount {};
+    CComboBox mEyeMovCombo;
+    std::vector<CString> mImagePaths;
+    void AnalyzeImage(const cv::Mat &img, cv::Mat& leftEyeImg, cv::Mat& rightEyeImg);
+    void AnalyzeCurrentImg();
 };
 
 #endif

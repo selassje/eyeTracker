@@ -60,63 +60,51 @@ ON_BN_CLICKED(IDC_EDGE, &CImageDlg::OnClickedEdge)
 ON_BN_CLICKED(IDC_GPF, &CImageDlg::OnBnClickedGpf)
 END_MESSAGE_MAP()
 
-IplImage* CImageDlg::GetRightEyeImg(void)
-{
-    CEyeTrackerDlg* pEyeDlg = (CEyeTrackerDlg*)GetParent();
-    return pEyeDlg->m_pCameraDlg->m_pRightEyeImg;
-}
-
-IplImage* CImageDlg::GetLeftEyeImg(void)
-{
-    CEyeTrackerDlg* pEyeDlg = (CEyeTrackerDlg*)GetParent();
-    return pEyeDlg->m_pCameraDlg->m_pLeftEyeImg;
-}
-
 BOOL CImageDlg::OnInitDialog()
 {
     CDialog::OnInitDialog();
 
     {
-        cvNamedWindow(DISPLAY_LEFT_EYE_WINDOW, CV_WINDOW_AUTOSIZE);
+        cv::namedWindow(DISPLAY_LEFT_EYE_WINDOW, CV_WINDOW_AUTOSIZE);
         HWND hWnd = (HWND)cvGetWindowHandle(DISPLAY_LEFT_EYE_WINDOW);
         HWND hParent = ::GetParent(hWnd);
         CWnd* pCameraWndParent = GetDlgItem(IDC_LEYEOUT);
         RECT cLeftEye;
         pCameraWndParent->GetClientRect(&cLeftEye);
-        m_iLeftEyeWidth = cLeftEye.right;
-        m_iLeftEyeHeight = cLeftEye.bottom;
+        mLeftEyeWidth = cLeftEye.right;
+        mLeftEyeHeight = cLeftEye.bottom;
         ::SetParent(hWnd, pCameraWndParent->m_hWnd);
         ::ShowWindow(hParent, SW_HIDE);
     }
 
     {
-        cvNamedWindow(DISPLAY_RIGHT_EYE_WINDOW, CV_WINDOW_AUTOSIZE);
+        cv::namedWindow(DISPLAY_RIGHT_EYE_WINDOW, CV_WINDOW_AUTOSIZE);
         HWND hWnd = (HWND)cvGetWindowHandle(DISPLAY_RIGHT_EYE_WINDOW);
         HWND hParent = ::GetParent(hWnd);
         CWnd* pCameraWndParent = GetDlgItem(IDC_REYEOUT);
         RECT cRightEye;
         pCameraWndParent->GetClientRect(&cRightEye);
-        m_iImgWidth = cRightEye.right;
-        m_iImgHeight = cRightEye.bottom;
+        mImgWidth = cRightEye.right;
+        mImgHeight = cRightEye.bottom;
         ::SetParent(hWnd, pCameraWndParent->m_hWnd);
         ::ShowWindow(hParent, SW_HIDE);
     }
 
     {
-        cvNamedWindow(DISPLAY_IMG_WINDOW, CV_WINDOW_AUTOSIZE);
+        cv::namedWindow(DISPLAY_IMG_WINDOW, CV_WINDOW_AUTOSIZE);
         HWND hWnd = (HWND)cvGetWindowHandle(DISPLAY_IMG_WINDOW);
         HWND hParent = ::GetParent(hWnd);
         CWnd* pCameraWndParent = GetDlgItem(IDC_IMG);
         RECT cRightEye;
         pCameraWndParent->GetClientRect(&cRightEye);
-        m_iRightEyeWidth = cRightEye.right - cRightEye.left;
-        m_iRightEyeHeight = cRightEye.bottom - cRightEye.top;
+        mRightEyeWidth = cRightEye.right - cRightEye.left;
+        mRightEyeHeight = cRightEye.bottom - cRightEye.top;
         ::SetParent(hWnd, pCameraWndParent->m_hWnd);
         ::ShowWindow(hParent, SW_HIDE);
     }
 
-    m_iCurrentImg = 0;
-    m_iImgCount = 0;
+    mCurrentImg = 0;
+    mImgCount = 0;
 
     AnalyzeCurrentImg();
 
@@ -129,7 +117,6 @@ BOOL CImageDlg::OnInitDialog()
             setWindowTheme(GetDlgItem(IDC_EDGE)->m_hWnd, L"", L"");
             setWindowTheme(GetDlgItem(IDC_GPF)->m_hWnd, L"", L"");
         }
-
         ::FreeLibrary(hDll);
     }
 
@@ -144,32 +131,30 @@ void CImageDlg::OnBnClickedButton1()
     fileDlg.GetOFN().nMaxFile = MAX_FILES * (_MAX_PATH + 1) + 1;
     ;
     if (fileDlg.DoModal() == IDOK) {
-        m_lImages.clear();
-        m_lImages.resize(0);
-        m_iCurrentImg = 0;
+        mImagePaths.clear();
+        mImagePaths.resize(0);
+        mCurrentImg = 0;
 
         POSITION position = fileDlg.GetStartPosition();
 
         while (position) {
             CString strSelectedPath = fileDlg.GetNextPathName(position);
             CStringA ansiPath(strSelectedPath);
-
-            IplImage* pImg = cvLoadImage(ansiPath);
-
-            if (pImg) {
-                m_lImages.push_back(strSelectedPath);
-                cvReleaseImage(&pImg);
+            auto img = cv::imread(static_cast<const char*>(ansiPath));
+     
+            if (!img.empty()) {
+                mImagePaths.push_back(strSelectedPath);
             }
         }
-        m_iImgCount = m_lImages.size();
+        mImgCount = mImagePaths.size();
 
         CString strImgCount;
-        if (m_iImgCount == 0) {
+        if (mImgCount == 0) {
             strImgCount.Empty();
             SetDlgItemText(IDC_IMGCURRENT, L"");
-        } else
-            strImgCount.Format(L"%Iu", m_iImgCount);
-
+        } else {
+            strImgCount.Format(L"%Iu", mImgCount);
+        }
         SetDlgItemText(IDC_IMGCOUNT, strImgCount);
         AnalyzeCurrentImg();
     }
@@ -178,73 +163,52 @@ void CImageDlg::OnBnClickedButton1()
 
 void CImageDlg::AnalyzeCurrentImg()
 {
-    IplImage* pImg = NULL;
-    IplImage* pLeftEye = NULL;
-    IplImage* pRightEye = NULL;
+    cv::Mat img {};
 
-    static int iDepth = 8;
-    static int iChannels = 1;
-
-    if (m_iImgCount != 0) {
+    if (mImgCount != 0) {
         CString strImgCurrent;
-        strImgCurrent.Format(L"%Iu", m_iCurrentImg + 1);
+        strImgCurrent.Format(L"%Iu", mCurrentImg + 1);
         SetDlgItemText(IDC_IMGCURRENT, strImgCurrent);
-
-        CString fileName = m_lImages[m_iCurrentImg];
+        CString fileName = mImagePaths[mCurrentImg];
         CStringA ansiFileName(fileName);
-        pImg = cvLoadImage(ansiFileName);
+        img = cv::imread(static_cast<const char*>(ansiFileName));
         SetDlgItemText(IDC_FILENAME, fileName);
     }
-    IplImage* pDisplayImg = NULL;
-    IplImage* pDisplayLeftEye = NULL;
-    IplImage* pDisplayRightEye = NULL;
 
-    if (pImg) {
-        iDepth = pImg->depth;
-        iChannels = pImg->nChannels;
+    if (!img.empty()) {
 
-        pDisplayImg = cvCreateImage(cvSize(m_iImgWidth, m_iImgHeight), iDepth, iChannels);
+        cv::Mat displayImg = { mImgHeight, mImgWidth, img.type(), cv::Scalar {}};
+        cv::Mat displayLeftEyeImg = { mLeftEyeHeight, mLeftEyeWidth, img.type(), cv::Scalar {} };
+        cv::Mat displayRightEyeImg = { mRightEyeHeight, mRightEyeWidth, img.type(), cv::Scalar {} };
 
-        AnalyzeImage(pImg, &pLeftEye, &pRightEye);
+        cv::Mat leftEyeImg {}, rightEyeImg {};
+        AnalyzeImage(img, leftEyeImg, rightEyeImg);
 
-        pDisplayLeftEye = cvCreateImage(cvSize(m_iLeftEyeWidth, m_iLeftEyeHeight), iDepth, iChannels);
-        cvZero(pDisplayLeftEye);
-        if (pLeftEye) {
-            cvResize(pLeftEye, pDisplayLeftEye);
-            cvReleaseImage(&pLeftEye);
+        if (!leftEyeImg.empty()) {
+            cv::resize(leftEyeImg, displayLeftEyeImg, { mLeftEyeWidth, mLeftEyeHeight }, 1.0, 1.0);
         }
 
-        pDisplayRightEye = cvCreateImage(cvSize(m_iRightEyeWidth, m_iRightEyeHeight), iDepth, iChannels);
-        cvZero(pDisplayRightEye);
-        if (pRightEye) {
-
-            cvResize(pRightEye, pDisplayRightEye);
-            cvReleaseImage(&pRightEye);
+        if (!rightEyeImg.empty()) {
+            cv::resize(rightEyeImg, displayRightEyeImg, { mRightEyeWidth, mRightEyeHeight });
         }
 
-        cvResize(pImg, pDisplayImg);
-        cvReleaseImage(&pImg);
+        cv::resize(img, displayImg, cv::Size { mImgWidth, mImgHeight });
+
+        cv::imshow(DISPLAY_RIGHT_EYE_WINDOW, displayRightEyeImg);
+        cv::imshow(DISPLAY_LEFT_EYE_WINDOW, displayLeftEyeImg);
+        cv::imshow(DISPLAY_IMG_WINDOW, displayImg);
     }
-
-    cvShowImage(DISPLAY_RIGHT_EYE_WINDOW, pDisplayRightEye);
-    cvReleaseImage(&pDisplayRightEye);
-
-    cvShowImage(DISPLAY_LEFT_EYE_WINDOW, pDisplayLeftEye);
-    cvReleaseImage(&pDisplayLeftEye);
-
-    cvShowImage(DISPLAY_IMG_WINDOW, pDisplayImg);
-    cvReleaseImage(&pDisplayImg);
 }
 
 void CImageDlg::OnBnClickedNext()
 {
-    m_iCurrentImg = (m_iCurrentImg + 1) % m_iImgCount;
+    mCurrentImg = (mCurrentImg + 1) % mImgCount;
     AnalyzeCurrentImg();
 }
 
 void CImageDlg::OnBnClickedPrev()
 {
-    m_iCurrentImg = m_iCurrentImg == 0 ? m_iImgCount - 1 : m_iCurrentImg - 1;
+    mCurrentImg = mCurrentImg == 0 ? mImgCount - 1 : mCurrentImg - 1;
     AnalyzeCurrentImg();
 }
 
@@ -266,66 +230,53 @@ HBRUSH CImageDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 
     return hbr;
 }
-void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRightEye)
+void CImageDlg::AnalyzeImage(const cv::Mat& img, cv::Mat& leftEyeImg, cv::Mat& rightEyeImg)
 {
-
     auto drawPoint = [](const auto& image, const auto& point, const auto& color) {
         const auto Radius = 1;
         const auto Thickness = -1;
         const auto LineType = 4;
         const auto Shift = 0;
-        return cvDrawCircle(image, point, Radius, color, Thickness, LineType, Shift);
+        return cv::circle(image, point, Radius, color, Thickness, LineType, Shift);
     };
 
     auto drawLine = [](const auto& image, const auto& point1, const auto& point2, const auto& color) {
         const auto Thickness = 1;
         const auto LineType = 4;
         const auto Shift = 0;
-        return cvDrawLine(image, point1, point2, color, Thickness, LineType, Shift);
+        return cv::line(image, point1, point2, color, Thickness, LineType, Shift);
     };
 
-    auto pFace = CObjectDetection::DetectFace(cv::cvarrToMat(pImg));
-    if (pFace) {
+    auto face = CObjectDetection::DetectFace(img);
+    if (face) {
+        auto [leftEye, rightEye] = CObjectDetection::DetectEyes(img, *face);
 
-
-        auto [cLeftEye, cRightEye] = CObjectDetection::DetectEyes(cv::cvarrToMat(pImg), *pFace);
-
-        if (!cLeftEye.empty()) {
-            *pLeftEye = cvCreateImage(cvSize(cLeftEye.width, cLeftEye.height), pImg->depth, pImg->nChannels);
-
-            cvSetImageROI(pImg,
-                cvRect(cLeftEye.x, cLeftEye.y, cLeftEye.width, cLeftEye.height));
-            cvCopy(pImg, *pLeftEye, NULL);
-            cvResetImageROI(pImg);
+        if (!leftEye.empty()) {
+            leftEyeImg = { cv::Size { leftEye.width, leftEye.height }, img.type() }; 
+            img(leftEye).copyTo(leftEyeImg);
         }
-        if (!cRightEye.empty()) {
-            *pRightEye = cvCreateImage(cvSize(cRightEye.width, cRightEye.height), pImg->depth, pImg->nChannels);
-
-            cvSetImageROI(pImg,
-                cvRect(cRightEye.x, cRightEye.y, cRightEye.width, cRightEye.height));
-            cvCopy(pImg, *pRightEye, NULL);
-            cvResetImageROI(pImg);
+        if (!rightEye.empty()) {
+            rightEyeImg = { cv::Size { rightEye.width, rightEye.height }, img.type() };
+            img(rightEye).copyTo(rightEyeImg);
         }
 
-        if (*pLeftEye) {
-            CvPoint cPupilCDF;
-            CvPoint cPupilEdge;
-            CvPoint cPupilGPF;
-            cPupilGPF.x = -1;
-            cPupilGPF.y = -1;
+        if (!leftEyeImg.empty()) {
+            cv::Point pupilCDF {},
+                pupilEdge {},
+                pupilGPF {};
 
             if (IsDlgButtonChecked(IDC_CDF)) {
-                cPupilCDF = CObjectDetection::DetectPupilCDF(cv::cvarrToMat(*pLeftEye));
+                pupilCDF = CObjectDetection::DetectPupilCDF(leftEyeImg);
             }
             if (IsDlgButtonChecked(IDC_EDGE)) {
-                cPupilEdge = CObjectDetection::DetectPupilEdge(cv::cvarrToMat(*pLeftEye));
+                pupilEdge = CObjectDetection::DetectPupilEdge(leftEyeImg);
             }
             if (IsDlgButtonChecked(IDC_GPF)) {
-                cPupilGPF = CObjectDetection::DetectPupilGPF(cv::cvarrToMat(*pLeftEye));
+                pupilGPF = CObjectDetection::DetectPupilGPF(leftEyeImg);
             }
 
             if (IsDlgButtonChecked(IDC_CDF)) {
-                drawPoint(*pLeftEye, cvPoint(cPupilCDF.x, cPupilCDF.y), CVCOLORS::RED);
+                drawPoint(leftEyeImg, cv::Point(pupilCDF.x, pupilCDF.y), CVCOLORS::RED);
 #ifdef DEBUG_
                 IplImage* pDrawnPupil = cvCreateImage(cvGetSize(*pLeftEye), 8, 1);
                 cvCvtColor(*pLeftEye, pDrawnPupil, CV_BGR2GRAY);
@@ -334,7 +285,7 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
 #endif
             }
             if (IsDlgButtonChecked(IDC_EDGE)) {
-                drawPoint(*pLeftEye, cvPoint(cPupilEdge.x, cPupilEdge.y), CVCOLORS::BLUE);
+                drawPoint(leftEyeImg, cv::Point { pupilEdge.x, pupilEdge.y }, CVCOLORS::BLUE);
 #ifdef DEBUG_
                 IplImage* pDrawnPupil = cvCreateImage(cvGetSize(*pLeftEye), 8, 1);
                 cvCvtColor(*pLeftEye, pDrawnPupil, CV_BGR2GRAY);
@@ -345,7 +296,7 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
 #endif
             }
             if (IsDlgButtonChecked(IDC_GPF)) {
-                drawPoint(*pLeftEye, cvPoint(cPupilGPF.x, cPupilGPF.y), CVCOLORS::GREEN);
+                drawPoint(leftEyeImg, cv::Point { pupilGPF.x, pupilGPF.y }, CVCOLORS::GREEN);
 #ifdef DEBUG_
                 IplImage* pDrawnPupil = cvCreateImage(cvGetSize(*pLeftEye), 8, 1);
                 cvCvtColor(*pLeftEye, pDrawnPupil, CV_BGR2GRAY);
@@ -357,28 +308,22 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
             }
         }
 
-        if (*pRightEye) {
-            CvPoint cPupilCDF;
-            CvPoint cPupilEdge;
-            CvPoint cPupilGPF;
-
-            cPupilGPF.x = -1;
-            cPupilGPF.y = -1;
-
-            cPupilEdge.x = -1;
-            cPupilEdge.y = -1;
+        if (!rightEyeImg.empty()) {
+            cv::Point pupilCDF {},
+                pupilEdge {},
+                pupilGPF {};
 
             if (IsDlgButtonChecked(IDC_CDF)) {
-                cPupilCDF = CObjectDetection::DetectPupilCDF(cv::cvarrToMat(*pRightEye));
+                pupilCDF = CObjectDetection::DetectPupilCDF(rightEyeImg);
             }
             if (IsDlgButtonChecked(IDC_EDGE)) {
-                cPupilEdge = CObjectDetection::DetectPupilEdge(cv::cvarrToMat(*pRightEye));
+                pupilEdge = CObjectDetection::DetectPupilEdge(rightEyeImg);
             }
             if (IsDlgButtonChecked(IDC_GPF)) {
-                cPupilGPF = CObjectDetection::DetectPupilGPF(cv::cvarrToMat(*pRightEye));
+                pupilGPF = CObjectDetection::DetectPupilGPF(rightEyeImg);
             }
             if (IsDlgButtonChecked(IDC_CDF)) {
-                drawPoint(*pRightEye, cvPoint(cPupilCDF.x, cPupilCDF.y), CVCOLORS::RED);
+                drawPoint(rightEyeImg, cv::Point(pupilCDF.x, pupilCDF.y), CVCOLORS::RED);
 #ifdef DEBUG_
                 IplImage* pDrawnPupil = cvCreateImage(cvGetSize(*pRightEye), 8, 1);
                 cvCvtColor(*pRightEye, pDrawnPupil, CV_BGR2GRAY);
@@ -389,10 +334,10 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
 #endif
             }
             if (IsDlgButtonChecked(IDC_EDGE)) {
-                drawPoint(*pRightEye, cvPoint(cPupilEdge.x, cPupilEdge.y), CVCOLORS::BLUE);
+                drawPoint(rightEyeImg, cv::Point { pupilEdge.x, pupilEdge.y }, CVCOLORS::BLUE);
             }
             if (IsDlgButtonChecked(IDC_GPF)) {
-                drawPoint(*pRightEye, cvPoint(cPupilGPF.x, cPupilGPF.y), CVCOLORS::GREEN);
+                drawPoint(rightEyeImg, cv::Point { pupilGPF.x, pupilGPF.y }, CVCOLORS::GREEN);
             }
         }
 
@@ -403,37 +348,6 @@ void CImageDlg::AnalyzeImage(IplImage* pImg, IplImage** pLeftEye, IplImage** pRi
         cvSaveImage("face.jpg", pFaceDrawnImg);
         cvReleaseImage(&pFaceDrawnImg);
 #endif
-    } else {
-        *pLeftEye = cvCreateImage(cvGetSize(pImg), pImg->depth, pImg->nChannels);
-        cvSetImageROI(pImg, cvRect(0, 0, pImg->width, pImg->height));
-        cvCopy(pImg, *pLeftEye, NULL);
-        cvResetImageROI(pImg);
-
-        CvPoint cPupilCDF;
-        CvPoint cPupilEdge;
-        CvPoint cPupilGPF;
-
-        if (IsDlgButtonChecked(IDC_CDF)) {
-            cPupilCDF = CObjectDetection::DetectPupilCDF(cv::cvarrToMat(*pLeftEye));
-        }
-        if (IsDlgButtonChecked(IDC_EDGE)) {
-            cPupilEdge = CObjectDetection::DetectPupilEdge(cv::cvarrToMat(*pLeftEye));
-        }
-
-        if (IsDlgButtonChecked(IDC_GPF)) {
-            cPupilGPF = CObjectDetection::DetectPupilGPF(cv::cvarrToMat(*pLeftEye));
-        }
-
-        if (IsDlgButtonChecked(IDC_CDF)) {
-            drawPoint(*pLeftEye, cvPoint(cPupilCDF.x, cPupilCDF.y), CVCOLORS::RED);
-        }
-
-        if (IsDlgButtonChecked(IDC_EDGE)) {
-            drawPoint(*pLeftEye, cvPoint(cPupilEdge.x, cPupilEdge.y), CVCOLORS::BLUE);
-        }
-        if (IsDlgButtonChecked(IDC_GPF)) {
-            drawPoint(*pLeftEye, cvPoint(cPupilGPF.x, cPupilGPF.y), CVCOLORS::GREEN);
-        }
     }
 }
 
