@@ -44,36 +44,36 @@ class CCameraDlg : public CDialog {
     DECLARE_DYNAMIC(CCameraDlg)
 
 private:
-    CvCapture* m_pCapture {};
-    IplImage* m_pCurrentFrame {};
-    IplImage* m_pCurrentOrgFrame {};
-    CEyeTrackerDlg* m_pEyeTrackerDlg {};
-    int m_iWndWidth {};
-    int m_iWndHeight {};
-    int m_iLeftEyeWndWidth {};
-    int m_iLeftEyeWndHeight {};
-    int m_iRightEyeWndWidth {};
-    int m_iRightEyeWndHeight {};
-    BOOL m_bIsMouseControl {};
-    BOOL m_bIsTracking {};
-    CvPoint m_cCurrentMidPoint;
-    CvPoint m_cLastMidPoint;
-    CvPoint m_cTemplateMidPoint;
-    int m_iTemplateWidth {};
-    int m_iTemplateHeight {};
-    int m_iSelectedAlg {};
-    int m_iAvgFaceFps {};
-    int m_iAvgEyeFps {};
-    int m_iAccH {};
-    int m_iAccV {};
-    int m_iVarrianceBlink {};
-    int m_iLastFramesNum {};
-    double m_dRatioThreshold {};
-    double m_dRatioThreshold2 {};
-    BOOL m_bSupportClicking {};
-    BOOL m_bSupportDoubleClick {};
-    DWORD m_iTickCount {};
-    bool m_bIsTmpSet;
+    CvCapture* mCapture {};
+    IplImage* mCurrentFrame {};
+    IplImage* mCurrentOrgFrame {};
+    CEyeTrackerDlg* mEyeTrackerDlg {};
+    int mWndWidth {};
+    int mWndHeight {};
+    int mLeftEyeWndWidth {};
+    int mLeftEyeWndHeight {};
+    int mRightEyeWndWidth {};
+    int mRightEyeWndHeight {};
+    BOOL mIsMouseControl {};
+    BOOL mIsTracking {};
+    CvPoint mCurrentMidPoint;
+    CvPoint mLastMidPoint;
+    CvPoint mTemplateMidPoint;
+    int mTemplateWidth {};
+    int mTemplateHeight {};
+    int mSelectedAlg {};
+    int mAvgFaceFps {};
+    int mAvgEyeFps {};
+    int mAccH {};
+    int mAccV {};
+    int mVarrianceBlink {};
+    int mLastFramesNum {};
+    double mRatioThreshold {};
+    double mRatioThreshold2 {};
+    BOOL mSupportClicking {};
+    BOOL mSupportDoubleClick {};
+    DWORD mTickCount {};
+    bool mIsTmpSet;
 
     afx_msg void OnTimer(UINT_PTR nIDEvent);
 
@@ -87,8 +87,8 @@ private:
 public:
     CCameraDlg(CWnd* pParent = NULL);
     virtual ~CCameraDlg();
-    IplImage* m_pLeftEyeImg {};
-    IplImage* m_pRightEyeImg {};
+    IplImage* mLeftEyeImg {};
+    IplImage* mRightEyeImg {};
 
     virtual BOOL OnInitDialog();
     afx_msg void OnBnClickedBtmp();
