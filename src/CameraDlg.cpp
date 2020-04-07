@@ -174,8 +174,8 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                 auto& eyeLeft = eyes.first;
                 auto& eyeRight = eyes.second;
   
-                bool avgLeft = false;
-                bool avgRight = false;
+                bool avgLeft = true;
+                bool avgRight = true;
 
                 for (int i = 0; i < mAvgEyeFps; ++i) {
                     if (mCapture.isOpened()) {
@@ -188,7 +188,7 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                         if (eyeLeft.empty())
                             avgLeft = false;
                         if (eyeRight.empty())
-                            avgRight = FALSE;
+                            avgRight = false;
 
                         avgLeftEyeX += eyeLeft.x;
                         avgLeftEyeY += eyeLeft.y;
