@@ -618,27 +618,27 @@ void CCameraDlg::ReleaseRightButton()
 void CCameraDlg::OnClickedBtrack()
 {
     if (!m_bIsTracking) {
-        int iCameraIndex = m_pEyeTrackerDlg->m_pSettingDlg->m_iSelectedCamera;
+        int iCameraIndex = m_pEyeTrackerDlg->m_pSettingDlg->mSelectedCamera;
         m_pCapture = cvCaptureFromCAM(iCameraIndex);
 
         if (m_pCapture) {
-            cvSetCaptureProperty(m_pCapture, CV_CAP_PROP_FRAME_WIDTH, m_pEyeTrackerDlg->m_pSettingDlg->m_iFrameWidth);
-            cvSetCaptureProperty(m_pCapture, CV_CAP_PROP_FRAME_HEIGHT, m_pEyeTrackerDlg->m_pSettingDlg->m_iFrameHeight);
+            cvSetCaptureProperty(m_pCapture, CV_CAP_PROP_FRAME_WIDTH, m_pEyeTrackerDlg->m_pSettingDlg->mFrameWidth);
+            cvSetCaptureProperty(m_pCapture, CV_CAP_PROP_FRAME_HEIGHT, m_pEyeTrackerDlg->m_pSettingDlg->mFrameHeight);
             m_bIsTracking = TRUE;
             ::EnableWindow(GetDlgItem(IDC_BTMP)->m_hWnd, TRUE);
-            m_iSelectedAlg = m_pEyeTrackerDlg->m_pSettingDlg->m_iSelectedAlg;
-            m_iTemplateHeight = m_pEyeTrackerDlg->m_pSettingDlg->m_iTmpHeight;
-            m_iTemplateWidth = m_pEyeTrackerDlg->m_pSettingDlg->m_iTmpWidth;
-            m_iAvgFaceFps = m_pEyeTrackerDlg->m_pSettingDlg->m_iAvgFaceFps;
-            m_iAvgEyeFps = m_pEyeTrackerDlg->m_pSettingDlg->m_iAvgEyeFps;
-            m_iAccH = m_pEyeTrackerDlg->m_pSettingDlg->m_iAccH;
-            m_iAccV = m_pEyeTrackerDlg->m_pSettingDlg->m_iAccV;
-            m_bSupportClicking = m_pEyeTrackerDlg->m_pSettingDlg->m_bSupportClicking;
-            m_bSupportDoubleClick = m_pEyeTrackerDlg->m_pSettingDlg->m_bSupportDoubleClick;
-            m_iVarrianceBlink = m_pEyeTrackerDlg->m_pSettingDlg->m_iThresholdClick;
-            m_iLastFramesNum = m_pEyeTrackerDlg->m_pSettingDlg->m_iFrameNumClick;
-            m_dRatioThreshold = m_pEyeTrackerDlg->m_pSettingDlg->m_fVarrianceRatio;
-            m_dRatioThreshold2 = m_pEyeTrackerDlg->m_pSettingDlg->m_fVarrianceRatio2;
+            m_iSelectedAlg = m_pEyeTrackerDlg->m_pSettingDlg->mSelectedAlg;
+            m_iTemplateHeight = m_pEyeTrackerDlg->m_pSettingDlg->mTmpHeight;
+            m_iTemplateWidth = m_pEyeTrackerDlg->m_pSettingDlg->mTmpWidth;
+            m_iAvgFaceFps = m_pEyeTrackerDlg->m_pSettingDlg->mAvgFaceFps;
+            m_iAvgEyeFps = m_pEyeTrackerDlg->m_pSettingDlg->mAvgEyeFps;
+            m_iAccH = m_pEyeTrackerDlg->m_pSettingDlg->mAccH;
+            m_iAccV = m_pEyeTrackerDlg->m_pSettingDlg->mAccV;
+            m_bSupportClicking = m_pEyeTrackerDlg->m_pSettingDlg->mSupportClicking;
+            m_bSupportDoubleClick = m_pEyeTrackerDlg->m_pSettingDlg->mSupportDoubleClick;
+            m_iVarrianceBlink = m_pEyeTrackerDlg->m_pSettingDlg->mThresholdClick;
+            m_iLastFramesNum = m_pEyeTrackerDlg->m_pSettingDlg->mFrameNumClick;
+            m_dRatioThreshold = m_pEyeTrackerDlg->m_pSettingDlg->mVarrianceRatio;
+            m_dRatioThreshold2 = m_pEyeTrackerDlg->m_pSettingDlg->mVarrianceRatio2;
             m_iTickCount = 0;
             SetDlgItemText(IDC_BTRACK, L"Stop Tracking");
             SetTimer(DISPLAY_TIMER, 0, NULL);

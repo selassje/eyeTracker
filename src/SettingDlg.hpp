@@ -39,34 +39,33 @@ public:
     enum { IDD = IDD_SETTINGDLG };
 
     virtual BOOL OnInitDialog();
-    int m_iSelectedCamera {};
-    int m_iSelectedAlg {};
-    int m_iTmpWidth {};
-    int m_iTmpHeight {};
-    int m_iFrameWidth {};
-    int m_iFrameHeight {};
-    int m_iAvgFaceFps {};
-    int m_iAvgEyeFps {};
-    int m_iAccH {};
-    int m_iAccV {};
-    BOOL m_bSupportClicking {};
-    BOOL m_bSupportDoubleClick {};
-    double m_fVarrianceRatio {};
-    double m_fVarrianceRatio2 {};
-    int m_iThresholdClick {};
-    int m_iFrameNumClick {};
+    int mSelectedCamera {};
+    int mSelectedAlg {};
+    int mTmpWidth {};
+    int mTmpHeight {};
+    int mFrameWidth {};
+    int mFrameHeight {};
+    int mAvgFaceFps {};
+    int mAvgEyeFps {};
+    int mAccH {};
+    int mAccV {};
+    BOOL mSupportClicking {};
+    BOOL mSupportDoubleClick {};
+    double mVarrianceRatio {};
+    double mVarrianceRatio2 {};
+    int mThresholdClick {};
+    int mFrameNumClick {};
     afx_msg void OnCbnDropdownCombodevice();
     void Save();
 
 protected:
     virtual void DoDataExchange(CDataExchange* pDX);
-
     DECLARE_MESSAGE_MAP()
 
 private:
-    CComboBox m_cDeviceCombo;
+    CComboBox mDeviceCombo;
     void UpdateDeviceList(void);
-    CComboBox m_cAlgList {};
+    CComboBox mAlgList {};
 };
 
 #endif
