@@ -27,7 +27,7 @@ SOFTWARE.
 #include "Constants.hpp"
 #include "EyeTrackerDlg.hpp"
 #include "ObjectDetection.hpp"
-#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/highgui.hpp"
 
 #define EYEDISPLAY_TIMER 2
 #define DISPLAY_LEFT_EYE_WINDOW "Left"

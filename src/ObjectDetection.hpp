@@ -35,8 +35,8 @@ public:
     static std::optional<cv::Rect> DetectFace(const cv::Mat& img);
     static std::pair<cv::Rect,cv::Rect> DetectEyes(const cv::Mat& img, const cv::Rect& face);
     static cv::Point DetectPupilCDF(const cv::Mat& eyeImg);
-    static CvPoint DetectPupilGPF(const cv::Mat& eyeImg);
-    static CvPoint DetectPupilEdge(const cv::Mat& eyeImg);
+    static cv::Point DetectPupilGPF(const cv::Mat& eyeImg);
+    static cv::Point DetectPupilEdge(const cv::Mat& eyeImg);
     static bool DetectLeftBlink(const cv::Mat& eyeImg, const size_t lastFramesNumber, const int varrianceThreshold, const double ratioThreshold, bool reset = false);
     static bool DetectRightBlink(const cv::Mat& eyeImg, const size_t lastFramesNumber, const int varrianceThreshold, const double ratioThreshold, bool reset = false);
     static void Init();

@@ -27,7 +27,7 @@ SOFTWARE.
 #include <deque>
 #include <iostream>
 #include <map>
-#include <opencv2/highgui/highgui_c.h>
+#include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <queue>
@@ -283,7 +283,7 @@ typedef std::pair<int, double> t_data;
 typedef std::priority_queue<t_data, std::deque<t_data>, greater_second<t_data>> t_queue;
 
 
-CvPoint CObjectDetection::DetectPupilEdge(const cv::Mat& eyeImg)
+cv::Point CObjectDetection::DetectPupilEdge(const cv::Mat& eyeImg)
 {
     const int thresholdX = static_cast<int>(0.25 * eyeImg.cols);
     const int thresholdY = static_cast<int>(0.25 * eyeImg.rows);
@@ -395,7 +395,7 @@ CvPoint CObjectDetection::DetectPupilEdge(const cv::Mat& eyeImg)
     return pupil;
 }
 
-CvPoint CObjectDetection::DetectPupilGPF(const cv::Mat& eyeImg)
+cv::Point CObjectDetection::DetectPupilGPF(const cv::Mat& eyeImg)
 {
     constexpr double alfa = 0;
     const auto imageSize = cv::Size { eyeImg.cols, eyeImg.rows };

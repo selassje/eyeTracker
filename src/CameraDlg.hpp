@@ -28,7 +28,8 @@ SOFTWARE.
 
 #include "resource.h"
 #include "stdafx.h"
-#include <opencv2/videoio/videoio_c.h>
+
+#include <opencv2/videoio.hpp>
 
 #define DISPLAY_WINDOW "Camera"
 #define EYE_DEBUG_WINDOW "Eye"
@@ -44,9 +45,9 @@ class CCameraDlg : public CDialog {
     DECLARE_DYNAMIC(CCameraDlg)
 
 private:
-    CvCapture* mCapture {};
-    IplImage* mCurrentFrame {};
-    IplImage* mCurrentOrgFrame {};
+    cv::VideoCapture mCapture {};
+    cv::Mat mCurrentFrame {};
+    cv::Mat mCurrentOrgFrame {};
     CEyeTrackerDlg* mEyeTrackerDlg {};
     int mWndWidth {};
     int mWndHeight {};
@@ -56,9 +57,9 @@ private:
     int mRightEyeWndHeight {};
     BOOL mIsMouseControl {};
     BOOL mIsTracking {};
-    CvPoint mCurrentMidPoint;
-    CvPoint mLastMidPoint;
-    CvPoint mTemplateMidPoint;
+    cv::Point mCurrentMidPoint;
+    cv::Point mLastMidPoint;
+    cv::Point mTemplateMidPoint;
     int mTemplateWidth {};
     int mTemplateHeight {};
     int mSelectedAlg {};
@@ -87,8 +88,8 @@ private:
 public:
     CCameraDlg(CWnd* pParent = NULL);
     virtual ~CCameraDlg();
-    IplImage* mLeftEyeImg {};
-    IplImage* mRightEyeImg {};
+    cv::Mat mLeftEyeImg {};
+    cv::Mat mRightEyeImg {};
 
     virtual BOOL OnInitDialog();
     afx_msg void OnBnClickedBtmp();

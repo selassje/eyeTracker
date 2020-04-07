@@ -28,8 +28,8 @@ SOFTWARE.
 #include "Constants.hpp"
 #include "EyeTrackerDlg.hpp"
 #include "ObjectDetection.hpp"
-#include <opencv2/highgui/highgui_c.h>
-#include <opencv2/videoio/videoio_c.h>
+#include "opencv2/highgui.hpp"
+
 
 #define DISPLAY_TIMER 1
 #define MOUSE_SENSIVITY 20
@@ -39,6 +39,7 @@ SOFTWARE.
 IMPLEMENT_DYNAMIC(CCameraDlg, CDialog)
 
 using namespace cv;
+
 
 CCameraDlg::CCameraDlg(CWnd* pParent /*=NULL*/)
     : CDialog(CCameraDlg::IDD, pParent)
@@ -65,7 +66,6 @@ END_MESSAGE_MAP()
 BOOL CCameraDlg::OnInitDialog()
 {
     CDialog::OnInitDialog();
-    mCapture = NULL;
     mEyeTrackerDlg = (CEyeTrackerDlg*)GetParent();
 
     {
@@ -129,143 +129,131 @@ BOOL CCameraDlg::OnInitDialog()
 
 void CCameraDlg::PostNcDestroy()
 {
-    cvReleaseCapture(&mCapture);
-    cvDestroyAllWindows();
+    cv::destroyAllWindows();
     CDialog::PostNcDestroy();
 }
 
 void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
 {
-    static int iLefEyeFrameCount = 0;
-    static int iRightEyeFrameCount = 0;
+    static int lefEyeFrameCount = 0;
+    static int rightEyeFrameCount = 0;
 
-    static unsigned int iFaceFrameCount = 0;
-    static int iAvgFaceX = 0;
-    static int iAvgFaceY = 0;
-    static int iAvgFaceWidth = 0;
-    static int iAvgFaceHeight = 0;
+    static unsigned int faceFrameCount = 0;
+    static int avgFaceX = 0;
+    static int avgFaceY = 0;
+    static int avgFaceWidth = 0;
+    static int avgFaceHeight = 0;
 
-    static int iAvgLeftEyeX = 0;
-    static int iAvgLeftEyeY = 0;
-    static int iAvgLeftEyeWidth = 0;
-    static int iAvgLeftEyeHeight = 0;
+    static int avgLeftEyeX = 0;
+    static int avgLeftEyeY = 0;
+    static int avgLeftEyeWidth = 0;
+    static int avgLeftEyeHeight = 0;
 
-    static int iAvgRightEyeX = 0;
-    static int iAvgRightEyeY = 0;
-    static int iAvgRightEyeWidth = 0;
-    static int iAvgRightEyeHeight = 0;
+    static int avgRightEyeX = 0;
+    static int avgRightEyeY = 0;
+    static int avgRightEyeWidth = 0;
+    static int avgRightEyeHeight = 0;
 
-    static bool isMove = FALSE;
+    static bool isMove = false;
 
-    static bool bLeftEyeClosed = FALSE;
-    static bool bRightEyeClosed = FALSE;
+    static bool leftEyeClosed = false;
+    static bool rightEyeClosed = false;
 
-    CvPoint cPupilLeft;
-    CvPoint cPupilRight;
+    cv::Point pupilLeft { -1, -1 };
+    cv::Point pupilRight { -1, -1 };
 
-    cPupilLeft.x = -1;
-    cPupilLeft.y = -1;
+    if (mCapture.isOpened()) {
+        mCapture >> mCurrentFrame;
+        bool leftEyeBlink = false;
+        bool rightEyeBlink = false;
+        if (!mCurrentFrame.empty()) {
+            auto face = CObjectDetection::DetectFace(mCurrentFrame);
+            double widthRatio =  mWndWidth  /  static_cast<double>(mCurrentFrame.cols);
+            double heightRatio = mWndHeight /  static_cast<double>(mCurrentFrame.rows);
+            cv::Mat display{ mWndHeight, mWndWidth, mCurrentFrame.type() };
+            cv::resize(mCurrentFrame, display, cv::Size { mWndWidth, mWndHeight });
+            
+            isMove = false;
 
-    cPupilRight.x = -1;
-    cPupilRight.y = -1;
+            if (face) {
+                ++faceFrameCount;
 
-    if (mCapture) {
-        mCurrentFrame = cvCloneImage(cvQueryFrame(mCapture));
-        BOOL bLeftEyeBlink = FALSE;
-        BOOL bRightEyeBlink = FALSE;
-        if (mCurrentFrame) {
-            auto pFace = CObjectDetection::DetectFace(cv::cvarrToMat(mCurrentFrame));
-            double dWidthRatio = ((double)mWndWidth) / mCurrentFrame->width;
-            double dHeightRatio = ((double)mWndHeight) / mCurrentFrame->height;
-            auto pDisplay = cvCreateImage(cvSize(mWndWidth, mWndHeight),
-                mCurrentFrame->depth, mCurrentFrame->nChannels);
-            cvResize(mCurrentFrame, pDisplay);
+                avgFaceX += face->x;
+                avgFaceY += face->y;
+                avgFaceWidth += face->width;
+                avgFaceHeight += face->height;
 
-            isMove = FALSE;
-
-            if (pFace) {
-
-                ++iFaceFrameCount;
-
-                iAvgFaceX += pFace->x;
-                iAvgFaceY += pFace->y;
-                iAvgFaceWidth += pFace->width;
-                iAvgFaceHeight += pFace->height;
-
-                if (iFaceFrameCount % mAvgFaceFps) {
-                    cvReleaseImage(&mCurrentFrame);
-                    cvReleaseImage(&pDisplay);
+                if (faceFrameCount % mAvgFaceFps) {
                     return;
                 }
 
-                pFace->x = iAvgFaceX / mAvgFaceFps;
-                pFace->y = iAvgFaceY / mAvgFaceFps;
-                pFace->height = iAvgFaceHeight / mAvgFaceFps;
-                pFace->width = iAvgFaceWidth / mAvgFaceFps;
+                face->x = avgFaceX / mAvgFaceFps;
+                face->y = avgFaceY / mAvgFaceFps;
+                face->height = avgFaceHeight / mAvgFaceFps;
+                face->width = avgFaceWidth / mAvgFaceFps;
 
-                iAvgFaceX = 0;
-                iAvgFaceY = 0;
-                iAvgFaceWidth = 0;
-                iAvgFaceHeight = 0;
-                iFaceFrameCount = 0;
+                avgFaceX = 0;
+                avgFaceY = 0;
+                avgFaceWidth = 0;
+                avgFaceHeight = 0;
+                faceFrameCount = 0;
 
                 CString strLog;
-                strLog.Format(L"Detected Face (x=%d y=%d width=%d height=%d)", pFace->x, pFace->y, pFace->width, pFace->height);
+                strLog.Format(L"Detected Face (x=%d y=%d width=%d height=%d)", face->x, face->y, face->width, face->height);
                 Log(strLog);
 
                 std::pair<cv::Rect, cv::Rect> eyes;
 
-                auto& cEyeLeft = eyes.first;
-                auto& cEyeRight = eyes.second;
+                auto& eyeLeft = eyes.first;
+                auto& eyeRight = eyes.second;
   
-                bool bAvgLeft = TRUE;
-                bool bAvgRight = TRUE;
+                bool avgLeft = false;
+                bool avgRight = false;
 
                 for (int i = 0; i < mAvgEyeFps; ++i) {
-                    if (mCapture) {
+                    if (mCapture.isOpened()) {
 
-                        IplImage* pCurrentFrame = cvCloneImage(cvQueryFrame(mCapture));
+                        cv::Mat currentFrame;
+                        mCapture >> currentFrame;
 
-                        eyes = CObjectDetection::DetectEyes(cv::cvarrToMat(pCurrentFrame), *pFace);
+                        eyes = CObjectDetection::DetectEyes(currentFrame, *face);
 
-                        cvReleaseImage(&pCurrentFrame);
+                        if (eyeLeft.empty())
+                            avgLeft = false;
+                        if (eyeRight.empty())
+                            avgRight = FALSE;
 
-                        if (cEyeLeft.width == 0 && cEyeLeft.height == 0)
-                            bAvgLeft = FALSE;
-                        if (cEyeRight.width == 0 && cEyeRight.height == 0)
-                            bAvgRight = FALSE;
+                        avgLeftEyeX += eyeLeft.x;
+                        avgLeftEyeY += eyeLeft.y;
+                        avgLeftEyeWidth += eyeLeft.width;
+                        avgLeftEyeHeight += eyeLeft.height;
 
-                        iAvgLeftEyeX += cEyeLeft.x;
-                        iAvgLeftEyeY += cEyeLeft.y;
-                        iAvgLeftEyeWidth += cEyeLeft.width;
-                        iAvgLeftEyeHeight += cEyeLeft.height;
-
-                        iAvgRightEyeX += cEyeRight.x;
-                        iAvgRightEyeY += cEyeRight.y;
-                        iAvgRightEyeWidth += cEyeRight.width;
-                        iAvgRightEyeHeight += cEyeRight.height;
+                        avgRightEyeX += eyeRight.x;
+                        avgRightEyeY += eyeRight.y;
+                        avgRightEyeWidth += eyeRight.width;
+                        avgRightEyeHeight += eyeRight.height;
                     }
                 }
 
-                cEyeLeft.x = iAvgLeftEyeX / mAvgEyeFps;
-                cEyeLeft.y = iAvgLeftEyeY / mAvgEyeFps;
-                cEyeLeft.width = iAvgLeftEyeWidth / mAvgEyeFps;
-                cEyeLeft.height = iAvgLeftEyeHeight / mAvgEyeFps;
+                eyeLeft.x = avgLeftEyeX / mAvgEyeFps;
+                eyeLeft.y = avgLeftEyeY / mAvgEyeFps;
+                eyeLeft.width = avgLeftEyeWidth / mAvgEyeFps;
+                eyeLeft.height = avgLeftEyeHeight / mAvgEyeFps;
 
-                cEyeRight.x = iAvgRightEyeX / mAvgEyeFps;
-                cEyeRight.y = iAvgRightEyeY / mAvgEyeFps;
-                cEyeRight.width = iAvgRightEyeWidth / mAvgEyeFps;
-                cEyeRight.height = iAvgRightEyeHeight / mAvgEyeFps;
+                eyeRight.x = avgRightEyeX / mAvgEyeFps;
+                eyeRight.y = avgRightEyeY / mAvgEyeFps;
+                eyeRight.width = avgRightEyeWidth / mAvgEyeFps;
+                eyeRight.height = avgRightEyeHeight / mAvgEyeFps;
 
-                iAvgLeftEyeX = 0;
-                iAvgLeftEyeY = 0;
-                iAvgLeftEyeWidth = 0;
-                iAvgLeftEyeHeight = 0;
+                avgLeftEyeX = 0;
+                avgLeftEyeY = 0;
+                avgLeftEyeWidth = 0;
+                avgLeftEyeHeight = 0;
 
-                iAvgRightEyeX = 0;
-                iAvgRightEyeY = 0;
-                iAvgRightEyeWidth = 0;
-                iAvgRightEyeHeight = 0;
+                avgRightEyeX = 0;
+                avgRightEyeY = 0;
+                avgRightEyeWidth = 0;
+                avgRightEyeHeight = 0;
 
                 auto drawPupils = [](const auto& mainDisplay,
                                       const auto& pointOnMainDisplay,
@@ -277,183 +265,179 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                     const auto LineType = 4;
                     const auto Shift = 0;
                     const auto color = CV_RGB(250, 250, 210);
-                    cvDrawCircle(mainDisplay, pointOnMainDisplay, MainRadius, color, Thickness, LineType, Shift);
-                    cvDrawCircle(eyeDisplay, pointOnEyeDisplay, EyeDisplayRadius, color, Thickness, LineType, Shift);
+                    cv::circle(mainDisplay, pointOnMainDisplay, MainRadius, color, Thickness, LineType, Shift);
+                    cv::circle(eyeDisplay, pointOnEyeDisplay, EyeDisplayRadius, color, Thickness, LineType, Shift);
                 };
 
-                if (bAvgLeft) {
+                if (avgLeft) {
 
-                    cvReleaseImage(&mLeftEyeImg);
-                    mLeftEyeImg = cvCreateImage(cvSize(cEyeLeft.width, cEyeLeft.height), mCurrentFrame->depth, mCurrentFrame->nChannels);
-                    cvSetImageROI(mCurrentFrame,
-                        cvRect(cEyeLeft.x, cEyeLeft.y, cEyeLeft.width, cEyeLeft.height));
-                    cvCopy(mCurrentFrame, mLeftEyeImg, NULL);
-                    cvResetImageROI(mCurrentFrame);
+                    mLeftEyeImg = cv::Mat { eyeLeft.height, eyeLeft.width, mCurrentFrame.type() };
+                    mCurrentFrame(eyeLeft).copyTo(mLeftEyeImg);
 
-                    bLeftEyeBlink = CObjectDetection::DetectLeftBlink(cv::cvarrToMat(mLeftEyeImg), static_cast<size_t>(mLastFramesNum), mVarrianceBlink, mRatioThreshold);
+                    leftEyeBlink = CObjectDetection::DetectLeftBlink(mLeftEyeImg, static_cast<size_t>(mLastFramesNum), mVarrianceBlink, mRatioThreshold);
 
-                    CvPoint cPupilCenter;
+                    cv::Point pupilCenter {};
 
                     switch (mSelectedAlg) {
                     case 0:
-                        cPupilCenter = CObjectDetection::DetectPupilCDF(cv::cvarrToMat(mLeftEyeImg));
+                        pupilCenter = CObjectDetection::DetectPupilCDF(mLeftEyeImg);
                         break;
                     case 1:
-                        cPupilCenter = CObjectDetection::DetectPupilEdge(cv::cvarrToMat(mLeftEyeImg));
+                        pupilCenter = CObjectDetection::DetectPupilEdge(mLeftEyeImg);
                         break;
                     case 2:
-                        cPupilCenter = CObjectDetection::DetectPupilGPF(cv::cvarrToMat(mLeftEyeImg));
+                        pupilCenter = CObjectDetection::DetectPupilGPF(mLeftEyeImg);
                         break;
                     }
 
-                    cPupilLeft.x = cPupilCenter.x + cEyeLeft.x;
-                    cPupilLeft.y = cPupilCenter.y + cEyeLeft.y;
+                    pupilLeft.x = pupilCenter.x + eyeLeft.x;
+                    pupilLeft.y = pupilCenter.y + eyeLeft.y;
 
-                    double dEyeWidthRatio = ((double)mLeftEyeWndWidth) / mLeftEyeImg->width;
-                    double dEyeHeightRatio = ((double)mLeftEyeWndHeight) / mLeftEyeImg->height;
-                    IplImage* pLeftEyeDisplay = cvCreateImage(cvSize(mLeftEyeWndWidth, mLeftEyeWndHeight), mCurrentFrame->depth, mCurrentFrame->nChannels);
-                    cvResize(mLeftEyeImg, pLeftEyeDisplay);
+                    double eyeWidthRatio = static_cast<double>(mLeftEyeWndWidth) / mLeftEyeImg.cols;
+                    double eyeHeightRatio = static_cast<double>(mLeftEyeWndHeight) / mLeftEyeImg.rows;
+                    cv::Mat leftEyeDisplay { mLeftEyeWndHeight, mLeftEyeWndWidth, mCurrentFrame.type() };
+                    cv::resize(mLeftEyeImg, leftEyeDisplay, cv::Size { mLeftEyeWndWidth, mLeftEyeWndHeight });
                     if (IsDlgButtonChecked(IDC_CSHOWPUPIL)) {
 
-                        drawPupils(pDisplay,
-                            cvPoint((int)(cPupilLeft.x * dWidthRatio), (int)(cPupilLeft.y * dHeightRatio)),
-                            pLeftEyeDisplay,
-                            cvPoint((int)(cPupilCenter.x * dEyeWidthRatio), (int)(cPupilCenter.y * dEyeHeightRatio)));
+                        drawPupils(display,
+                            cv::Point { static_cast<int>(pupilLeft.x * widthRatio), static_cast<int>(pupilLeft.y * heightRatio) },
+                            leftEyeDisplay,
+                            cv::Point { static_cast<int>(pupilCenter.x * eyeWidthRatio), static_cast<int>(pupilCenter.y * eyeHeightRatio)});
 
                         CString strLog;
-                        strLog.Format(L"Detected Left Pupil (x=%d y=%d)", cPupilLeft.x, cPupilLeft.y);
+                        strLog.Format(L"Detected Left Pupil (x=%d y=%d)", pupilLeft.x, pupilLeft.y);
                         Log(strLog);
                     }
 
-                    cvShowImage(EYEL_WINDOW, pLeftEyeDisplay);
+                    cv::imshow(EYEL_WINDOW, leftEyeDisplay);
 
                     CString strLog;
-                    strLog.Format(L"Detected Left Eye (x=%d y=%d width=%d height=%d)", cEyeLeft.x, cEyeLeft.y, cEyeLeft.width, cEyeLeft.height);
+                    strLog.Format(L"Detected Left Eye (x=%d y=%d width=%d height=%d)", eyeLeft.x, eyeLeft.y, eyeLeft.width, eyeLeft.height);
                     Log(strLog);
-
-                    cvReleaseImage(&pLeftEyeDisplay);
                 }
 
-                if (bAvgRight) {
-                    cvReleaseImage(&mRightEyeImg);
-                    mRightEyeImg = cvCreateImage(cvSize(cEyeRight.width, cEyeRight.height), mCurrentFrame->depth, mCurrentFrame->nChannels);
+                if (avgRight) {
+                    mRightEyeImg = cv::Mat { eyeRight.height, eyeRight.width, mCurrentFrame.type() };
+                    mCurrentFrame(eyeRight).copyTo(mRightEyeImg);
 
-                    cvSetImageROI(mCurrentFrame,
-                        cvRect(cEyeRight.x, cEyeRight.y, cEyeRight.width, cEyeRight.height));
-                    cvCopy(mCurrentFrame, mRightEyeImg, NULL);
-                    cvResetImageROI(mCurrentFrame);
 
                     CString strLog;
-                    strLog.Format(L"Detected Right Eye (x=%d y=%d width=%d height=%d)", cEyeRight.x, cEyeRight.y, cEyeRight.width, cEyeRight.height);
+                    strLog.Format(L"Detected Right Eye (x=%d y=%d width=%d height=%d)", eyeRight.x, eyeRight.y, eyeRight.width, eyeRight.height);
                     Log(strLog);
 
-                    bRightEyeBlink = CObjectDetection::DetectRightBlink(cv::cvarrToMat(mRightEyeImg), static_cast<size_t>(mLastFramesNum), mVarrianceBlink, mRatioThreshold2);
+                    rightEyeBlink = CObjectDetection::DetectRightBlink(mRightEyeImg, static_cast<size_t>(mLastFramesNum), mVarrianceBlink, mRatioThreshold2);
 
-                    CvPoint cPupilCenter;
+                    cv::Point pupilCenter;
 
                     switch (mSelectedAlg) {
                     case 0:
-                        cPupilCenter = CObjectDetection::DetectPupilCDF(cv::cvarrToMat(mRightEyeImg));
+                        pupilCenter = CObjectDetection::DetectPupilCDF(mRightEyeImg);
                         break;
                     case 1:
-                        cPupilCenter = CObjectDetection::DetectPupilEdge(cv::cvarrToMat(mRightEyeImg));
+                        pupilCenter = CObjectDetection::DetectPupilEdge(mRightEyeImg);
                         break;
                     case 2:
-                        cPupilCenter = CObjectDetection::DetectPupilGPF(cv::cvarrToMat(mRightEyeImg));
+                        pupilCenter = CObjectDetection::DetectPupilGPF(mRightEyeImg);
                         break;
                     }
-                    cPupilRight.x = cPupilCenter.x + cEyeRight.x;
-                    cPupilRight.y = cPupilCenter.y + cEyeRight.y;
+                    pupilRight.x = pupilCenter.x + eyeRight.x;
+                    pupilRight.y = pupilCenter.y + eyeRight.y;
 
-                    IplImage* pRightEyeDisplay = cvCreateImage(cvSize(mRightEyeWndWidth, mRightEyeWndHeight), mCurrentFrame->depth, mCurrentFrame->nChannels);
-                    cvResize(mRightEyeImg, pRightEyeDisplay);
+                    cv::Mat rightEyeDisplay { mRightEyeWndHeight, mRightEyeWndWidth, mCurrentFrame.type() };
+                    cv::resize(mRightEyeImg, rightEyeDisplay, cv::Size { mRightEyeWndWidth, mRightEyeWndHeight });
 
-                    double dEyeWidthRatio = ((double)mRightEyeWndWidth) / mRightEyeImg->width;
-                    double dEyeHeightRatio = ((double)mRightEyeWndHeight) / mRightEyeImg->height;
+                    double eyeWidthRatio = mRightEyeWndWidth / static_cast<double>(mRightEyeImg.cols);
+                    double eyeHeightRatio = mRightEyeWndHeight / static_cast<double>(mRightEyeImg.rows);
 
                     if (IsDlgButtonChecked(IDC_CSHOWPUPIL)) {
-                        drawPupils(pDisplay,
-                            cvPoint((int)(cPupilRight.x * dWidthRatio), (int)(cPupilRight.y * dHeightRatio)),
-                            pRightEyeDisplay,
-                            cvPoint((int)(cPupilCenter.x * dEyeWidthRatio), (int)(cPupilCenter.y * dEyeHeightRatio)));
+                        drawPupils(display,
+                            cv::Point(static_cast<int>(pupilRight.x * widthRatio), static_cast<int>(pupilRight.y * heightRatio)),
+                            rightEyeDisplay,
+                            cv::Point(static_cast<int>(pupilCenter.x * eyeWidthRatio), static_cast<int>(pupilCenter.y * eyeHeightRatio)));
 
                         CString strLog;
-                        strLog.Format(L"Detected Right Pupil (x=%d y=%d)", cPupilRight.x, cPupilRight.y);
+                        strLog.Format(L"Detected Right Pupil (x=%d y=%d)", pupilRight.x, pupilRight.y);
                         Log(strLog);
                     }
 
-                    cvShowImage(EYER_WINDOW, pRightEyeDisplay);
-                    cvReleaseImage(&pRightEyeDisplay);
-
+                    cv::imshow(EYER_WINDOW, rightEyeDisplay);
+                    
                     if (IsDlgButtonChecked(IDC_CSHOWEYES)) {
-                        cEyeRight.x = (int)(dWidthRatio * cEyeRight.x);
-                        cEyeRight.y = (int)(dHeightRatio * cEyeRight.y);
-                        cEyeRight.width = (int)(cEyeRight.width * dWidthRatio);
-                        cEyeRight.height = (int)(cEyeRight.height * dHeightRatio);
+                        eyeRight.x = static_cast<int>(widthRatio * eyeRight.x);
+                        eyeRight.y = static_cast<int>(heightRatio * eyeRight.y);
+                        eyeRight.width = static_cast<int>(eyeRight.width * widthRatio);
+                        eyeRight.height = static_cast<int>(eyeRight.height * heightRatio);
 
-                        cvRectangle(pDisplay, cvPoint(cEyeRight.x, cEyeRight.y), cvPoint(cEyeRight.x + cEyeRight.width, cEyeRight.y + cEyeRight.height),
-                            CV_RGB(0, 255, 0), 1, 0, 0);
+                        cv::rectangle(display, cv::Point { eyeRight.x, eyeRight.y }, 
+                                               cv::Point { eyeRight.x + eyeRight.width, eyeRight.y + eyeRight.height },
+                                               CVCOLORS::GREEN, 1, 0, 0);
                     }
                 }
 
-                if (bAvgLeft)
+                if (avgLeft)
                     if (IsDlgButtonChecked(IDC_CSHOWEYES)) {
-                        cEyeLeft.x = (int)(dWidthRatio * cEyeLeft.x);
-                        cEyeLeft.y = (int)(dHeightRatio * cEyeLeft.y);
-                        cEyeLeft.width = (int)(cEyeLeft.width * dWidthRatio);
-                        cEyeLeft.height = (int)(cEyeLeft.height * dHeightRatio);
-                        cvRectangle(pDisplay, cvPoint(cEyeLeft.x, cEyeLeft.y), cvPoint(cEyeLeft.x + cEyeLeft.width, cEyeLeft.y + cEyeLeft.height),
-                            cvScalar(0, 255, 0, 0), 1, 0, 0);
+                        eyeLeft.x = static_cast<int>(widthRatio * eyeLeft.x);
+                        eyeLeft.y = static_cast<int>(heightRatio * eyeLeft.y);
+                        eyeLeft.width = static_cast<int>(eyeLeft.width * widthRatio);
+                        eyeLeft.height = static_cast<int>(eyeLeft.height * heightRatio);
+                        cv::rectangle(display, 
+                            cv::Point { eyeLeft.x, eyeLeft.y }, 
+                            cv::Point { eyeLeft.x + eyeLeft.width, eyeLeft.y + eyeLeft.height },
+                            CVCOLORS::GREEN, 1, 0, 0);
                     }
 
                 if (mIsTmpSet && IsDlgButtonChecked(IDC_CSHOWTMP))
-                    cvRectangle(pDisplay, cvPoint((int)((mTemplateMidPoint.x - mTemplateWidth / 2) * dWidthRatio), (int)((mTemplateMidPoint.y - mTemplateHeight / 2) * dHeightRatio)),
-                        cvPoint((int)((mTemplateMidPoint.x + mTemplateWidth / 2) * dWidthRatio), (int)((mTemplateMidPoint.y + mTemplateHeight / 2) * dHeightRatio)), CV_RGB(0, 0, 255), 2, 0, 0);
+                    cv::rectangle(display, 
+                        cv::Point { static_cast<int>((mTemplateMidPoint.x - mTemplateWidth / 2) * widthRatio), (int)((mTemplateMidPoint.y - mTemplateHeight / 2) * heightRatio) },
+                        cv::Point { static_cast<int>((mTemplateMidPoint.x + mTemplateWidth / 2) * widthRatio), (int)((mTemplateMidPoint.y + mTemplateHeight / 2) * heightRatio) }, 
+                        CV_RGB(0, 0, 255), 2, 0, 0);
 
-                if (cPupilRight.x != -1 && cPupilLeft.x != -1) {
-                    mCurrentMidPoint.x = (cPupilRight.x + cPupilLeft.x) / 2;
-                    mCurrentMidPoint.y = (cPupilRight.y + cPupilLeft.y) / 2;
+                if (pupilRight.x != -1 && pupilLeft.x != -1) {
+                    mCurrentMidPoint.x = (pupilRight.x + pupilLeft.x) / 2;
+                    mCurrentMidPoint.y = (pupilRight.y + pupilLeft.y) / 2;
 
                     if (IsDlgButtonChecked(IDC_CSHOWMID)) {
 
-                        CvPoint cDisplayMid;
-                        cDisplayMid.x = (int)(mCurrentMidPoint.x * dWidthRatio);
-                        cDisplayMid.y = (int)(mCurrentMidPoint.y * dHeightRatio);
+                        cv::Point displayMid;
+                        displayMid.x = static_cast<int>(mCurrentMidPoint.x * widthRatio);
+                        displayMid.y = static_cast<int>(mCurrentMidPoint.y * heightRatio);
 
-                        CvPoint cDisplayLeft;
-                        cDisplayLeft.x = (int)(cPupilLeft.x * dWidthRatio);
-                        cDisplayLeft.y = (int)(cPupilLeft.y * dHeightRatio);
-                        CvPoint cDisplayRight;
-                        cDisplayRight.x = (int)(cPupilRight.x * dWidthRatio);
-                        cDisplayRight.y = (int)(cPupilRight.y * dHeightRatio);
+                        cv::Point displayLeft;
+                        displayLeft.x = static_cast<int>(pupilLeft.x * widthRatio);
+                        displayLeft.y = static_cast<int>(pupilLeft.y * heightRatio);
+                        cv::Point displayRight;
+                        displayRight.x = static_cast<int>(pupilRight.x * widthRatio);
+                        displayRight.y = static_cast<int>(pupilRight.y * heightRatio);
 
                         constexpr auto lineThickness = 1;
                         constexpr auto lineType = 8;
                         constexpr auto circleThickness = -1;
                         constexpr auto circleLineType = 4;
 
-                        cvDrawLine(pDisplay, cDisplayRight, cDisplayLeft, CVCOLORS::GREEN, lineThickness, lineType);
-                        cvDrawCircle(pDisplay, cDisplayMid, 3, CVCOLORS::WHITE, circleThickness, circleLineType);
+                        cv::line(display, displayRight, displayLeft, CVCOLORS::GREEN, lineThickness, lineType);
+                        cv::circle(display, displayMid, 3, CVCOLORS::WHITE, circleThickness, circleLineType);
                     }
                     if (!mIsTmpSet && IsDlgButtonChecked(IDC_CSHOWTMP))
-                        cvRectangle(pDisplay, cvPoint((int)((mCurrentMidPoint.x - mTemplateWidth / 2) * dWidthRatio), (int)((mCurrentMidPoint.y - mTemplateHeight / 2) * dHeightRatio)),
-                            cvPoint((int)((mCurrentMidPoint.x + mTemplateWidth / 2) * dWidthRatio), (int)((mCurrentMidPoint.y + mTemplateHeight / 2) * dHeightRatio)), CV_RGB(0, 0, 255), 2, 0, 0);
+                       cv::rectangle(display, 
+                            cv::Point { static_cast<int>((mCurrentMidPoint.x - mTemplateWidth / 2) * widthRatio), static_cast<int>((mCurrentMidPoint.y - mTemplateHeight / 2) * heightRatio) },
+                            cv::Point { static_cast<int>((mCurrentMidPoint.x + mTemplateWidth / 2) * widthRatio), static_cast<int>((mCurrentMidPoint.y + mTemplateHeight / 2) * heightRatio) }, 
+                            CVCOLORS::BLUE, 2, 0, 0);
 
                     if (mIsMouseControl) {
 
                         if (mIsTmpSet) {
 
                             if (mCurrentMidPoint.x - mTemplateMidPoint.x > mTemplateWidth / 2) {
-                                int iMove = (int)-sqrt(double(mCurrentMidPoint.x - mTemplateMidPoint.x)) * mAccH;
-                                MoveCursor(iMove, 0);
+                                int move = static_cast<int>(-sqrt(static_cast<double>(mCurrentMidPoint.x - mTemplateMidPoint.x)) * mAccH);
+                                MoveCursor(move, 0);
                                 isMove = TRUE;
                                 CString strLog;
                                 strLog.Format(L"Detected Left Movement");
                                 Log(strLog);
                             }
                             if (mTemplateMidPoint.x - mCurrentMidPoint.x > mTemplateWidth / 2) {
-                                int iMove = (int)sqrt(double(mTemplateMidPoint.x - mCurrentMidPoint.x)) * mAccH;
-                                MoveCursor(iMove, 0);
+                                int move = (int)sqrt(double(mTemplateMidPoint.x - mCurrentMidPoint.x)) * mAccH;
+                                MoveCursor(move, 0);
                                 isMove = TRUE;
                                 CString strLog;
                                 strLog.Format(L"Detected Right Movement");
@@ -490,43 +474,47 @@ void CCameraDlg::OnTimer(UINT_PTR nIDEvent)
                     ReleaseLeftButton();
                 };
 
+               auto pressAndReleaseRightButton = [this]() {
+                    PressRightButton();
+                    ReleaseRightButton();
+                };
+
                 if (!isMove && mIsMouseControl) {
-                    if (bLeftEyeBlink && !bRightEyeBlink && mSupportClicking) {
+                    if (leftEyeBlink && !rightEyeBlink && mSupportClicking) {
+                        pressAndReleaseLeftButton();
                         pressAndReleaseLeftButton();
                         Log(L"Detected Left Eye blink");
                         isMove = TRUE;
                     }
-                    if (bRightEyeBlink && !bLeftEyeBlink && mSupportDoubleClick) {
-                        pressAndReleaseLeftButton();
-                        pressAndReleaseLeftButton();
+                    if (rightEyeBlink && !leftEyeBlink && mSupportDoubleClick) {
+                        pressAndReleaseRightButton();
+                        pressAndReleaseRightButton();
                         Log(L"Detected Right Eye Blink");
                         isMove = TRUE;
                     }
                 }
 
                 if (IsDlgButtonChecked(IDC_CHSHOWFACE)) {
-                    pFace->x = (int)(dWidthRatio * pFace->x);
-                    pFace->y = (int)(dHeightRatio * pFace->y);
-                    pFace->width = (int)(pFace->width * dWidthRatio);
-                    pFace->height = (int)(pFace->height * dHeightRatio);
+                    face->x = static_cast<int>(widthRatio * face->x);
+                    face->y = static_cast<int>(heightRatio * face->y);
+                    face->width = static_cast<int>(face->width * widthRatio);
+                    face->height = static_cast<int>(face->height * heightRatio);
 
-                    cvRectangle(pDisplay, cvPoint(pFace->x, pFace->y), cvPoint(pFace->x + pFace->width, pFace->y + pFace->height),
-                        cvScalar(0, 0, 255, 0), 1, 0, 0);
+                    cv::rectangle(display, cv::Point { face->x, face->y }, 
+                        cv::Point(face->x + face->width, face->y + face->height),
+                        CVCOLORS::BLUE, 1, 0, 0);
                 }
             }
 
-            cvShowImage(DISPLAY_WINDOW, pDisplay);
-            cvReleaseImage(&pDisplay);
-            int iNewTick = GetTickCount();
+            cv::imshow(DISPLAY_WINDOW, display);
+            auto newTick = GetTickCount();
             if (mTickCount) {
-                int iTickDiff = iNewTick - mTickCount;
-                int iFPS = (int)(1. / (iTickDiff / 1000.));
-                SetDlgItemInt(IDC_FPS, iFPS);
+                auto tickDiff = newTick - mTickCount;
+                int FPS = static_cast<int>(1. / (tickDiff / 1000.));
+                SetDlgItemInt(IDC_FPS, FPS);
             }
-            mTickCount = iNewTick;
+            mTickCount = newTick;
         }
-
-        cvReleaseImage(&mCurrentFrame);
     }
     CDialog::OnTimer(nIDEvent);
 }
@@ -618,12 +606,11 @@ void CCameraDlg::ReleaseRightButton()
 void CCameraDlg::OnClickedBtrack()
 {
     if (!mIsTracking) {
-        int iCameraIndex = mEyeTrackerDlg->m_pSettingDlg->mSelectedCamera;
-        mCapture = cvCaptureFromCAM(iCameraIndex);
-
-        if (mCapture) {
-            cvSetCaptureProperty(mCapture, CV_CAP_PROP_FRAME_WIDTH, mEyeTrackerDlg->m_pSettingDlg->mFrameWidth);
-            cvSetCaptureProperty(mCapture, CV_CAP_PROP_FRAME_HEIGHT, mEyeTrackerDlg->m_pSettingDlg->mFrameHeight);
+        auto cameraIndex = mEyeTrackerDlg->m_pSettingDlg->mSelectedCamera;
+        mCapture.open(cameraIndex);
+        if (mCapture.isOpened()) {
+            mCapture.set(cv::CAP_PROP_FRAME_WIDTH, mEyeTrackerDlg->m_pSettingDlg->mFrameWidth);
+            mCapture.set(cv::CAP_PROP_FRAME_WIDTH, mEyeTrackerDlg->m_pSettingDlg->mFrameHeight);
             mIsTracking = TRUE;
             ::EnableWindow(GetDlgItem(IDC_BTMP)->m_hWnd, TRUE);
             mSelectedAlg = mEyeTrackerDlg->m_pSettingDlg->mSelectedAlg;
@@ -651,7 +638,6 @@ void CCameraDlg::OnClickedBtrack()
 
     else {
         KillTimer(DISPLAY_TIMER);
-        cvReleaseCapture(&mCapture);
         mIsTracking = FALSE;
         ResetEyeBlinks();
         ::EnableWindow(GetDlgItem(IDC_BTMP)->m_hWnd, FALSE);
@@ -671,7 +657,6 @@ void CCameraDlg::OnClickedBmousectrl()
 
 void CCameraDlg::OnBnClickedBtmp()
 {
-
     if (!mIsTmpSet) {
         mTemplateMidPoint = mCurrentMidPoint;
         mIsTmpSet = TRUE;
@@ -696,6 +681,6 @@ BOOL CCameraDlg::PreTranslateMessage(MSG* pMsg)
 
 void CCameraDlg::ResetEyeBlinks()
 {
-    CObjectDetection::DetectLeftBlink(cv::cvarrToMat(mLeftEyeImg), static_cast<size_t>(mLastFramesNum), mVarrianceBlink, mRatioThreshold, true);
-    CObjectDetection::DetectRightBlink(cv::cvarrToMat(mRightEyeImg), static_cast<size_t>(mLastFramesNum), mVarrianceBlink, mRatioThreshold, true);
+    CObjectDetection::DetectLeftBlink(mLeftEyeImg, static_cast<size_t>(mLastFramesNum), mVarrianceBlink, mRatioThreshold, true);
+    CObjectDetection::DetectRightBlink(mRightEyeImg, static_cast<size_t>(mLastFramesNum), mVarrianceBlink, mRatioThreshold, true);
 }
