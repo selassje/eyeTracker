@@ -11,3 +11,4 @@ matrix:
             - cd build
             - cmd //c "RefreshEnv.cmd & cmake .."
             - cmake --build . --config Release
+            - cmake --build . --config Release --target RUN_TESTS
