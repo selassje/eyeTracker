@@ -6,7 +6,8 @@
 
 int main() {
     CObjectDetection::Init();
-
+    
+    constexpr int expectedFacesDetected = 24;
     const std::string path = "bioid";
     std::error_code error;
     auto detectedFaces = 0;
@@ -27,7 +28,14 @@ int main() {
                 }
             }
         }
-        std::cout << "Detected Faces " << detectedFaces << std::endl;
+      
     }
-    return detectedFaces ? 0 : 1;
+
+    if (detectedFaces != expectedFacesDetected) {
+        std::cout << "Detected faces: " << detectedFaces << std::endl;
+        std::cout << "Test failed" << std::endl;
+    } else {
+        std::cout << "Test passed" << std::endl;
+    }
+    return 0;
 }

@@ -6,3 +6,13 @@ include_directories(../src)
 add_executable(TestObjectDetection test_objectDetection.cpp ../src/ObjectDetection.cpp ../src/ObjectDetection.hpp)
 conan_target_link_libraries(TestObjectDetection)
 add_test(TestObjectDetection TestObjectDetection)
+
+set_tests_properties(TestObjectDetection
+                     PROPERTIES
+                     PASS_REGULAR_EXPRESSION "Test passed")
+set_tests_properties(TestObjectDetection
+                     PROPERTIES
+                     FAIL_REGULAR_EXPRESSION "(Exception|Test failed)")
+set_tests_properties(TestObjectDetection
+                     PROPERTIES
+                     TIMEOUT 120)
