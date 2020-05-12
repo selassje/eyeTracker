@@ -7,7 +7,7 @@
 int main() {
     CObjectDetection::Init();
     
-    constexpr int expectedFacesDetected = 24;
+    constexpr int expectedFacesDetected = 28;
     const std::string path = "bioid";
     std::error_code error;
     auto detectedFaces = 0;
