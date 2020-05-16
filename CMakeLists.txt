@@ -19,6 +19,8 @@ endif()
 include(${CMAKE_CURRENT_BINARY_DIR}/conan.cmake)
 
 set(CONAN_COMMON_DEPS opencv/3.4.5@conan/stable)  
+
+conan_add_remote(NAME selassje URL https://api.bintray.com/conan/selassje/conan)
                   
 macro(get_conan_deps ADDITIONAL_DEPS)
     conan_cmake_run(REQUIRES ${CONAN_COMMON_DEPS} ${ADDITIONAL_DEPS}
