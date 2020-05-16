@@ -18,15 +18,17 @@ endif()
 
 include(${CMAKE_CURRENT_BINARY_DIR}/conan.cmake)
 
-conan_add_remote(NAME selassje URL https://api.bintray.com/conan/selassje/conan)
+set(CONAN_COMMON_DEPS opencv/3.4.5@conan/stable)  
+                  
+macro(get_conan_deps ADDITIONAL_DEPS)
+    conan_cmake_run(REQUIRES ${CONAN_COMMON_DEPS} ${ADDITIONAL_DEPS}
+                    BASIC_SETUP CMAKE_TARGETS
+                    BUILD missing)
 
-conan_cmake_run(REQUIRES opencv/3.4.5@conan/stable NTGraph/0.1@conan/stable
-                BASIC_SETUP CMAKE_TARGETS
-                BUILD missing)
+    include(${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo_multi.cmake)
+    link_directories(${CONAN_OPENCV_ROOT_RELEASE}/staticlib)
+    link_directories(${CONAN_OPENCV_ROOT_DEBUG}/staticlib)
+endmacro()
 
-include(${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo_multi.cmake)
-link_directories(${CONAN_OPENCV_ROOT_RELEASE}/staticlib)
-link_directories(${CONAN_OPENCV_ROOT_DEBUG}/staticlib)
-  
 add_subdirectory(src)   
 add_subdirectory(tests)

@@ -12,6 +12,8 @@ file(GLOB_RECURSE RES
     "*.rc"
 )
 
+get_conan_deps(NTGraph/0.1@conan/stable)
+
 add_executable(EyeTracker WIN32 ${SRC})
 target_sources(${PROJECT_NAME} PRIVATE ${RES})
 set_source_files_properties(src/EyeTracker.rc PROPERTIES LANGUAGE RC)
